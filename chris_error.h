@@ -1,0 +1,49 @@
+#ifndef _CHRIS_ERROR_H
+#define _CHRIS_ERROR_H
+
+#define 	MEMORY_MALLOC_FAIL				0x01
+#define 	AV_OPEN_INPUT_FAIL				0x02
+#define 	AV_FIND_STREAM_INFO_FAIL		0x03
+#define 	NO_VIDEO_STREAM					0x04
+#define 	NO_AUDIO_STREAM					0x05
+
+
+#define 	UNSPPORT_VIDEO_CODEC			0x06
+#define 	UNSPPORT_AUDIO_CODEC			0x07
+#define 	OPEN_VIDEO_CODEC_FAIL			0x08
+#define 	OPEN_AUDIO_CODEC_FAIL			0x09
+
+
+#define		NEW_VIDEO_STREAM_FAIL			0x10
+#define		NOT_GUESS_OUT_FORMAT			0x11
+#define 	ADD_VIDEO_STREAM_FAIL			0x12
+#define 	ADD_AUDIO_STREAM_FAIL			0x13
+
+
+#define 	NO_FIND_VIDEO_ENCODE			0x14
+#define 	NO_FIND_AUDIO_ENCODE			0x15
+#define		OPEN_VIDEO_ENCODE_FAIL			0x16
+#define 	OPEN_AUDIO_ENCODE_FAIL			0x17
+
+#define 	OPEN_MUX_FILE_FAIL				0x18
+#define 	VIDEO_ENCODE_ERROR				0x19
+#define 	AUDIO_ENCODE_ERROR				0x20
+
+#define 	AUDIO_FLUSH_ERROR				0x21
+#define 	VIDEO_FLUSH_ERROR				0x22
+
+
+
+
+#define 	OUT_MAX_INPUT_NUM				0x40
+#define		SEG_INVALID_ARGUMENT			0x41
+
+
+#define 	CREAT_DIR_FAIL					0x42
+#define		CREAT_M3U8_DIR_FAIL				0x43
+#define		OPEN_M3U8_FAIL					0x44
+
+
+
+
+#endif
