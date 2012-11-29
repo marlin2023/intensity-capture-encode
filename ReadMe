@@ -19,3 +19,5 @@
         14:  HD 720p 59.94        	 1280 x 720 	 59.9401 FPS
         15:  HD 720p 60           	 1280 x 720 	 60 FPS
 
+
+./capture --mode 1 --dir ./tmp --segment_time 10 --prefix_ts amite --m3u8 chris.m3u8 --frame_rate 23 --width 640 --height 480 --vb 600k --ab 64k --sample 44100 --channel 2

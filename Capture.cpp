@@ -23,14 +23,7 @@ extern "C"{
 //may be ,all the following variable can be remove
 pthread_mutex_t					sleepMutex;
 pthread_cond_t					sleepCond;
-int								videoOutputFile = -1;
-int								audioOutputFile = -1;
 
-const char *					g_videoOutputFile = NULL;
-const char *					g_audioOutputFile = NULL;
-
-
-static int						g_maxFrames = -1;
 static unsigned long 			frameCount = 0;
 
 DeckLinkCaptureDelegate::DeckLinkCaptureDelegate() : m_refCount(0)
@@ -82,10 +75,24 @@ HRESULT DeckLinkCaptureDelegate::VideoInputFrameArrived(IDeckLinkVideoInputFrame
 		}
 		else
 		{
-			printf("chris: frame size = %ld \n" ,videoFrame->GetRowBytes() * videoFrame->GetHeight());
 			videoFrame->GetBytes(&frameBytes);
 
-			seg_write_frame(this->seg_union ,videoFrame->GetWidth() ,videoFrame->GetHeight() ,VIDEO_STREAM_FLAG  ,frameBytes );
+			if( pthread_mutex_trylock(&this->yuv_video_buf->yuv_buf_mutex) == 0){ //lock sucess
+
+				printf("have_data_mark = %d \n" ,this->yuv_video_buf->have_data_mark);
+				if(this->yuv_video_buf->have_data_mark == 0){
+					this->yuv_video_buf->yuv_data = (unsigned char *)frameBytes;
+
+					this->yuv_video_buf->have_data_mark = 1; // not set
+					pthread_cond_signal(&this->yuv_video_buf->yuv_buf_cond);
+				}
+				else{//others ,drop
+					printf("...........................\n");
+//					sleep(1);
+				}
+				pthread_mutex_unlock(&this->yuv_video_buf->yuv_buf_mutex);
+			}
+			//seg_write_frame(this->seg_union ,videoFrame->GetWidth() ,videoFrame->GetHeight() ,VIDEO_STREAM_FLAG  ,frameBytes );
 		}
 
 		this->seg_union->picture_capture_no ++ ;
@@ -95,9 +102,8 @@ HRESULT DeckLinkCaptureDelegate::VideoInputFrameArrived(IDeckLinkVideoInputFrame
 	/* Handle Audio Frame */
 	if (audioFrame)
 	{
-		printf("audio .... ,frame count = %ld\n" ,audioFrame->GetSampleFrameCount());
+		//printf("audio .... ,frame count = %ld\n" ,audioFrame->GetSampleFrameCount());
 		int haha = audioFrame->GetSampleFrameCount() * CAPTURE_AUDIO_CHANNEL_NUM * (CAPTURE_AUDIO_SAMPLE_DEPTH / 8);
-		printf("haha = %d \n" ,haha);
 		audioFrame->GetBytes(&audioFrameBytes);
 		do_audio_out(this->seg_union->output_ctx ,audioFrameBytes
 						,audioFrame->GetSampleFrameCount() * CAPTURE_AUDIO_CHANNEL_NUM * (CAPTURE_AUDIO_SAMPLE_DEPTH / 8)
@@ -110,6 +116,36 @@ HRESULT DeckLinkCaptureDelegate::VideoInputFrameArrived(IDeckLinkVideoInputFrame
 HRESULT DeckLinkCaptureDelegate::VideoInputFormatChanged(BMDVideoInputFormatChangedEvents events, IDeckLinkDisplayMode *mode, BMDDetectedVideoInputFormatFlags)
 {
     return S_OK;
+}
+
+void * encode_yuv_data( void *void_del){
+
+	DeckLinkCaptureDelegate 	*delegate  = (DeckLinkCaptureDelegate 	*)void_del;
+	while(1){
+
+		//1.get lock
+		pthread_mutex_lock(&delegate->yuv_video_buf->yuv_buf_mutex);
+
+		if(delegate->yuv_video_buf->have_data_mark == 0){
+			printf("encode wait ...\n");
+			pthread_cond_wait(&delegate->yuv_video_buf->yuv_buf_cond ,&delegate->yuv_video_buf->yuv_buf_mutex);
+			printf("after wait ...\n");
+		}
+		printf("after wait 1.. ,have_data_mark = %d.\n" ,delegate->yuv_video_buf->have_data_mark);
+		//encode
+		seg_write_frame(delegate->seg_union ,
+						delegate->seg_union->width_capture ,delegate->seg_union->height_caputre ,
+						VIDEO_STREAM_FLAG  ,delegate->yuv_video_buf->yuv_data );
+
+		//change mark
+		delegate->yuv_video_buf->have_data_mark = 0;
+
+		//unlock lock
+		pthread_mutex_unlock(&delegate->yuv_video_buf->yuv_buf_mutex);
+
+	}
+
+	return NULL;
 }
 
 /*
@@ -145,10 +181,11 @@ int main(int argc, char *argv[])
 	init_seg_union(&seg_union ,argc ,argv);
 
 	seg_write_header(seg_union);
+
 //===========================
 
-	pthread_mutex_init(&sleepMutex, NULL);
-	pthread_cond_init(&sleepCond, NULL);
+//	pthread_mutex_init(&sleepMutex, NULL);
+//	pthread_cond_init(&sleepCond, NULL);
 
 	if (!deckLinkIterator)
 	{
@@ -157,7 +194,7 @@ int main(int argc, char *argv[])
 	}
 	
 	/* Connect to the first DeckLink instance */
-	result = deckLinkIterator->Next(&deckLink);
+	result = deckLinkIterator->Next(&deckLink);   //traverse decklink card ...
 	//The  IDeckLink  object interface represents a physical DeckLink device attached to the host computer.
 	if (result != S_OK)
 	{
@@ -207,6 +244,9 @@ int main(int argc, char *argv[])
 			deckLinkInput->DoesSupportVideoMode(selectedDisplayMode, pixelFormat, bmdVideoInputFlagDefault, &result, NULL);
 
 
+			delegate->seg_union->width_capture = (int)displayMode->GetWidth();
+			delegate->seg_union->height_caputre = (int)displayMode->GetHeight();
+
 			printf("result = %u \n\n" ,result);
 			if (result == bmdDisplayModeNotSupported)
 			{
@@ -226,7 +266,30 @@ int main(int argc, char *argv[])
 		exit(INVALID_MODE);
 	}
 
+	//*****************************************************************
+	//print width ,height capture from the device
+	printf( "width = %d ,height = %d \n" ,delegate->seg_union->width_capture ,delegate->seg_union->height_caputre);
+	/*	init yuv_video_buffer*/
+	delegate->yuv_video_buf = (yuv_video_buf_union * )malloc(sizeof(yuv_video_buf_union));
+	if(delegate->yuv_video_buf == NULL){
+		printf("yuv video buf malloc failed .\n");
+		exit(1);
+	}
 
+	delegate->yuv_video_buf->yuv_data = (unsigned char *)malloc(delegate->seg_union->width_capture * delegate->seg_union->height_caputre * 2);
+	if(delegate->yuv_video_buf->yuv_data == NULL){
+		printf("yuv_data buffer malloc failed .\n");
+		exit(1);
+	}
+
+	pthread_mutex_init(&delegate->yuv_video_buf->yuv_buf_mutex, NULL);
+	pthread_cond_init(&delegate->yuv_video_buf->yuv_buf_cond, NULL);
+	delegate->yuv_video_buf->have_data_mark = 0;
+
+	//new a thread to encode video data
+	pthread_t pid_video_encode;
+	pthread_create(&pid_video_encode , NULL ,encode_yuv_data ,delegate);
+	//*****************************************************************
 	/*
 	 *The  EnableVideoInput method configures video input and
 	 *puts the hardware into video capture mode.
@@ -263,23 +326,19 @@ int main(int argc, char *argv[])
         goto bail;
     }
 
+    pthread_join(pid_video_encode ,NULL);
 	// Block main thread until signal occurs
-	pthread_mutex_lock(&sleepMutex);		//
-
-	printf(".....waiting in here ....\n");
-	pthread_cond_wait(&sleepCond, &sleepMutex);
-
-	printf(".....waiting over ....\n\n");
-	pthread_mutex_unlock(&sleepMutex);
-	fprintf(stderr, "Stopping Capture\n");
+//	pthread_mutex_lock(&sleepMutex);		//
+//
+//	printf(".....waiting in here ....\n");
+//	pthread_cond_wait(&sleepCond, &sleepMutex);
+//
+//	printf(".....waiting over ....\n\n");
+//	pthread_mutex_unlock(&sleepMutex);
+//	fprintf(stderr, "Stopping Capture\n");
 
 bail:
    	
-	if (videoOutputFile)
-		close(videoOutputFile);
-	if (audioOutputFile)
-		close(audioOutputFile);
-	
 	if (displayModeIterator != NULL)
 	{
 		displayModeIterator->Release();

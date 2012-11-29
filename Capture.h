@@ -12,6 +12,17 @@ extern "C"{
 
 #endif
 #include "segment_yy.h"
+
+typedef struct yuv_video_buf_u{
+
+	unsigned char * yuv_data;
+	pthread_mutex_t		yuv_buf_mutex;
+	pthread_cond_t		yuv_buf_cond;
+
+	int have_data_mark;
+
+}yuv_video_buf_union;
+
 }
 
 class DeckLinkCaptureDelegate : public IDeckLinkInputCallback
@@ -19,6 +30,9 @@ class DeckLinkCaptureDelegate : public IDeckLinkInputCallback
 public:
 	//
 	Segment_U * seg_union;
+	yuv_video_buf_union *yuv_video_buf;
+
+	int quit_mark;
 	DeckLinkCaptureDelegate();
 	~DeckLinkCaptureDelegate();
 

@@ -264,8 +264,15 @@ static void open_video (Output_Context *ptr_output_ctx ,AVStream * st){
 
 	AVDictionary *opts = NULL;
 
-//	av_dict_set(&opts, "profile", "baseline", 0);
 	av_dict_set(&opts, "profile", "high", 0);
+	av_dict_set(&opts, "level", "31", 0);
+	//connect the string content x264opts
+//	av_dict_set(&opts, "x264opts", "bitrate=650:vbv-bufsize=900:vbv-maxrate=650:bframes=3:crf=20:ref=6", 0);
+//	av_dict_set(&opts, "x264opts", "bitrate=650:bframes=3:crf=20:ref=6", 0);
+	av_dict_set(&opts, "tune", "film", 0);
+//	av_dict_set(&opts, "preset", "slower", 0);
+
+
 	//open video encode
 	if(avcodec_open2(video_codec_ctx ,video_encode ,&opts/*NULL*/) < 0){
 
@@ -392,7 +399,7 @@ void encode_video_frame(Output_Context *ptr_output_ctx, AVFrame *pict,
 		nb_frames = lrintf(vdelta);
 
 
-    printf("nb_frames = %d \n" ,nb_frames);
+  //  printf("nb_frames = %d \n" ,nb_frames);
 	//set chris_count
 	int tmp_count;
 	for (tmp_count = 0; tmp_count < nb_frames; tmp_count++) {
@@ -741,7 +748,7 @@ void do_audio_out(Output_Context *ptr_output_ctx ,void * src_audio_buf ,int src_
 //			printf("av_fifo_size(ost->fifo) = %d ,frame_bytes = %d\n" ,av_fifo_size(ptr_output_ctx->fifo) ,frame_bytes);
 			av_fifo_generic_read(ptr_output_ctx->fifo, ptr_output_ctx->audio_buf, frame_bytes, NULL);
 			encode_audio_frame(ptr_output_ctx, ptr_output_ctx->audio_buf, frame_bytes);
-			printf("encode audio ....\n");
+			//printf("encode audio ....\n");
 		}
 
 }

@@ -58,6 +58,8 @@ typedef struct Segment_U{
 
 	AVFrame *picture_capture;
 	unsigned int picture_capture_no;
+	int width_capture;
+	int height_caputre;
 
 
 }Segment_U;

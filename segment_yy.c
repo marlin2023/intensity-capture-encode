@@ -119,15 +119,12 @@ int seg_write_frame(Segment_U * seg_union ,int input_width ,int input_height ,in
 
 
 
-//	if (flag == 0) {  //video data
-
-
 		avpicture_fill((AVPicture *)seg_union->picture_capture ,(uint8_t*)yuv_data , PIX_FMT_UYVY422 ,input_width ,input_height );
 			//encode video
 		//input stream 的问题。
 		ptr_output_ctx->sync_ipts = (double) seg_union->picture_capture_no / CAPTURE_FRAME_RATE ; //converter in seconds
 
-		printf("ptr_output_ctx->sync_ipts = %f , frame_no = %u \n" ,ptr_output_ctx->sync_ipts ,seg_union->picture_capture_no);
+		//printf("ptr_output_ctx->sync_ipts = %f , frame_no = %u \n" ,ptr_output_ctx->sync_ipts ,seg_union->picture_capture_no);
 
 		//first swscale
 		sws_scale(ptr_output_ctx->img_convert_ctx,
@@ -141,31 +138,7 @@ int seg_write_frame(Segment_U * seg_union ,int input_width ,int input_height ,in
 		encode_video_frame(ptr_output_ctx, ptr_output_ctx->encoded_yuv_pict,
 				NULL);
 
-		printf(".....encode one frame ...\n\n");
-//	}
-
-//	else if (flag == 1) {
-//		//printf("audio ...\n");
-//
-//		//encode the audio data ,and write the data into the output
-//
-//		do_audio_out(ptr_output_ctx ,NULL ,ptr_input_ctx->audio_decode_frame);
-//
-//	}
-//
-//
-//
-//	double file_duration = ptr_input_ctx->ptr_format_ctx->duration / AV_TIME_BASE
-//				+ (double)( ptr_input_ctx->ptr_format_ctx->duration % AV_TIME_BASE ) / AV_TIME_BASE;
-//
-//
-//	ptr_output_ctx->base_ipts  += file_duration;  //completed files sum time duration
-//	printf("end while ......,time_base = %f .............> \n" ,ptr_output_ctx->base_ipts  );
-//	ptr_output_ctx->audio_resample = 0;
-//	sws_freeContext(ptr_output_ctx->img_convert_ctx);
-//	free_input(ptr_input_ctx);
-//
-
+		//printf(".....encode one frame ...\n\n");
 
 	return 0;
 }
