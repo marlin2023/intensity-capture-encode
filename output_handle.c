@@ -47,15 +47,15 @@ AVStream * add_video_stream (AVFormatContext *fmt_ctx ,enum CodecID codec_id ,Ou
 	avctx->width = ptr_output_ctx->width;//VIDEO_WIDTH;
 	avctx->height = ptr_output_ctx->height;//VIDEO_HEIGHT;
 
-	//set bit rate
-	avctx->bit_rate = ptr_output_ctx->video_rate;//VIDEO_BIT_RATE;
-	avctx->rc_max_rate = ptr_output_ctx->video_rate;//VIDEO_BIT_RATE;
-	avctx->rc_min_rate = ptr_output_ctx->video_rate;//VIDEO_BIT_RATE;
-	avctx->bit_rate_tolerance = ptr_output_ctx->video_rate;//VIDEO_BIT_RATE;
-	avctx->rc_buffer_size = ptr_output_ctx->video_rate;//VIDEO_BIT_RATE;
-	avctx->rc_initial_buffer_occupancy = avctx->rc_buffer_size * 3 / 4;
-	avctx->rc_buffer_aggressivity = (float)1.0;
-	avctx->rc_initial_cplx = 0.5;
+//	//set bit rate
+//	avctx->bit_rate = ptr_output_ctx->video_rate;//VIDEO_BIT_RATE;
+//	avctx->rc_max_rate = ptr_output_ctx->video_rate;//VIDEO_BIT_RATE;
+//	avctx->rc_min_rate = ptr_output_ctx->video_rate;//VIDEO_BIT_RATE;
+//	avctx->bit_rate_tolerance = ptr_output_ctx->video_rate;//VIDEO_BIT_RATE;
+//	avctx->rc_buffer_size = ptr_output_ctx->video_rate;//VIDEO_BIT_RATE;
+//	avctx->rc_initial_buffer_occupancy = avctx->rc_buffer_size * 3 / 4;
+//	avctx->rc_buffer_aggressivity = (float)1.0;
+//	avctx->rc_initial_cplx = 0.5;
 
 
 
@@ -65,55 +65,55 @@ AVStream * add_video_stream (AVFormatContext *fmt_ctx ,enum CodecID codec_id ,Ou
 	avctx->qmin = 10;
 	avctx->qmax = 51;
 	avctx->max_qdiff = 4;
-	avctx->crf = 18;
-
-	avctx->rc_lookahead = 60;
-
+//	avctx->crf = 18;
+//
+//	avctx->rc_lookahead = 60;
+//
 
 	avctx->time_base.den = ptr_output_ctx->frame_rate;//VIDEO_FRAME_RATE;
 	avctx->time_base.num = 1;
 
 	//key frame
-	avctx->keyint_min = ptr_output_ctx->frame_rate;//VIDEO_FRAME_RATE;
-	avctx->scenechange_threshold = 0;
-	avctx->gop_size = ptr_output_ctx->frame_rate;//VIDEO_FRAME_RATE;
-
-	//other
-	avctx->global_quality = 6;
-
-	avctx->thread_count = 1;
-//	avctx->cqp = 26;
-	avctx->refs = 3;
-	avctx->trellis = 2;
-
-	avctx->me_method = 8;
-	avctx->me_range = 16;
-	avctx->me_subpel_quality = 7;
-	avctx->qmin = 10;
-	avctx->qmax = 51;
-	avctx->rc_initial_buffer_occupancy = 0.9;
-	avctx->i_quant_factor = 1.0/1.40f;  //
-	avctx->b_quant_factor = 1.30f;	//值越大 B frame 劣化越严重
-	avctx->chromaoffset = 0;
-	avctx->max_qdiff = 4;
-	avctx->qcompress = 0.6f;		//affect mbtree
-	avctx->qblur = 0.5f;
-	avctx->noise_reduction = 0;
-	avctx->scenechange_threshold = 40;
-
-	avctx->flags2 = CODEC_FLAG2_MIXED_REFS;
-	avctx->flags2 |= CODEC_FLAG2_8X8DCT;
-	avctx->flags |= CODEC_FLAG_LOOP_FILTER;
-	avctx->me_cmp = FF_CMP_CHROMA;
-	avctx->flags2 |= CODEC_FLAG2_AUD;
-	avctx->flags2 |= CODEC_FLAG2_FASTPSKIP;
-	avctx->flags2 |= CODEC_FLAG2_BPYRAMID;   //allow B-frames to be used as references
-	avctx->flags2 |= CODEC_FLAG_NORMALIZE_AQP;
-	avctx->flags2 |= CODEC_FLAG2_WPRED;
-	avctx->flags2 |= CODEC_FLAG2_MBTREE;  //宏块层次Use macroblock tree ratecontrol
-
-	avctx->level = 21;
-	avctx->profile = FF_PROFILE_H264_MAIN;   // do not effective
+//	avctx->keyint_min = ptr_output_ctx->frame_rate;//VIDEO_FRAME_RATE;
+//	avctx->scenechange_threshold = 0;
+//	avctx->gop_size = ptr_output_ctx->frame_rate;//VIDEO_FRAME_RATE;
+//
+//	//other
+//	avctx->global_quality = 6;
+//
+//	avctx->thread_count = 1;
+////	avctx->cqp = 26;
+//	avctx->refs = 3;
+//	avctx->trellis = 2;
+//
+//	avctx->me_method = 8;
+//	avctx->me_range = 16;
+//	avctx->me_subpel_quality = 7;
+//	avctx->qmin = 10;
+//	avctx->qmax = 51;
+//	avctx->rc_initial_buffer_occupancy = 0.9;
+//	avctx->i_quant_factor = 1.0/1.40f;  //
+//	avctx->b_quant_factor = 1.30f;	//值越大 B frame 劣化越严重
+//	avctx->chromaoffset = 0;
+//	avctx->max_qdiff = 4;
+//	avctx->qcompress = 0.6f;		//affect mbtree
+//	avctx->qblur = 0.5f;
+//	avctx->noise_reduction = 0;
+//	avctx->scenechange_threshold = 40;
+//
+//	avctx->flags2 = CODEC_FLAG2_MIXED_REFS;
+//	avctx->flags2 |= CODEC_FLAG2_8X8DCT;
+//	avctx->flags |= CODEC_FLAG_LOOP_FILTER;
+//	avctx->me_cmp = FF_CMP_CHROMA;
+//	avctx->flags2 |= CODEC_FLAG2_AUD;
+//	avctx->flags2 |= CODEC_FLAG2_FASTPSKIP;
+//	avctx->flags2 |= CODEC_FLAG2_BPYRAMID;   //allow B-frames to be used as references
+//	avctx->flags2 |= CODEC_FLAG_NORMALIZE_AQP;
+//	avctx->flags2 |= CODEC_FLAG2_WPRED;
+//	avctx->flags2 |= CODEC_FLAG2_MBTREE;  //宏块层次Use macroblock tree ratecontrol
+//
+//	avctx->level = 21;
+//	avctx->profile = FF_PROFILE_H264_MAIN;   // do not effective
 	// some formats want stream headers to be separate(for example ,asfenc.c ,but not mpegts)
 	if (fmt_ctx->oformat->flags & AVFMT_GLOBALHEADER)
 		avctx->flags |= CODEC_FLAG_GLOBAL_HEADER;
@@ -265,12 +265,11 @@ static void open_video (Output_Context *ptr_output_ctx ,AVStream * st){
 	AVDictionary *opts = NULL;
 
 	av_dict_set(&opts, "profile", "high", 0);
-	av_dict_set(&opts, "level", "31", 0);
-	//connect the string content x264opts
-//	av_dict_set(&opts, "x264opts", "bitrate=650:vbv-bufsize=900:vbv-maxrate=650:bframes=3:crf=20:ref=6", 0);
-//	av_dict_set(&opts, "x264opts", "bitrate=650:bframes=3:crf=20:ref=6", 0);
+	av_dict_set(&opts, "level", "21", 0);
 	av_dict_set(&opts, "tune", "film", 0);
-//	av_dict_set(&opts, "preset", "slower", 0);
+	av_dict_set(&opts, "preset", "slower", 0);
+	//connect the string content x264opts
+	av_dict_set(&opts, "x264opts", "crf=22:vbv-bufsize=650:vbv-maxrate=650:subme=10:trellis=2:bframes=3" ,0);
 
 
 	//open video encode

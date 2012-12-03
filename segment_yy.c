@@ -111,11 +111,11 @@ int seg_write_frame(Segment_U * seg_union ,int input_width ,int input_height ,in
 
 	Output_Context *ptr_output_ctx = seg_union->output_ctx;
 
-	//take img_conver_ctx from here
-	ptr_output_ctx->img_convert_ctx = sws_getContext(
-			input_width ,input_height ,PIX_FMT_UYVY422,
-			 ptr_output_ctx->video_stream->codec->width ,ptr_output_ctx->video_stream->codec->height ,PIX_FMT_YUV420P ,
-			 SWS_BICUBIC ,NULL ,NULL ,NULL);
+//	//take img_conver_ctx from here (must be free)
+//	ptr_output_ctx->img_convert_ctx = sws_getContext(
+//			input_width ,input_height ,PIX_FMT_UYVY422,
+//			 ptr_output_ctx->video_stream->codec->width ,ptr_output_ctx->video_stream->codec->height ,PIX_FMT_YUV420P ,
+//			 SWS_BICUBIC ,NULL ,NULL ,NULL);
 
 
 

@@ -18,13 +18,10 @@ extern "C"{
 
 #endif
 #include "output_handle.h"
+#include "libswscale/swscale.h"
 }
 
 //may be ,all the following variable can be remove
-pthread_mutex_t					sleepMutex;
-pthread_cond_t					sleepCond;
-
-static unsigned long 			frameCount = 0;
 
 DeckLinkCaptureDelegate::DeckLinkCaptureDelegate() : m_refCount(0)
 {
@@ -71,7 +68,7 @@ HRESULT DeckLinkCaptureDelegate::VideoInputFrameArrived(IDeckLinkVideoInputFrame
 
 		if (videoFrame->GetFlags() & bmdFrameHasNoInputSource)
 		{
-			fprintf(stderr, "Frame received (#%lu) - No input signal detected\n", frameCount);
+			fprintf(stderr, "Frame received (#%u) - No input signal detected\n", this->seg_union->picture_capture_no);
 		}
 		else
 		{
@@ -88,15 +85,12 @@ HRESULT DeckLinkCaptureDelegate::VideoInputFrameArrived(IDeckLinkVideoInputFrame
 				}
 				else{//others ,drop
 					printf("...........................\n");
-//					sleep(1);
 				}
 				pthread_mutex_unlock(&this->yuv_video_buf->yuv_buf_mutex);
 			}
-			//seg_write_frame(this->seg_union ,videoFrame->GetWidth() ,videoFrame->GetHeight() ,VIDEO_STREAM_FLAG  ,frameBytes );
 		}
 
 		this->seg_union->picture_capture_no ++ ;
-		frameCount++;
 	}
 
 	/* Handle Audio Frame */
@@ -132,7 +126,7 @@ void * encode_yuv_data( void *void_del){
 			printf("after wait ...\n");
 		}
 		printf("after wait 1.. ,have_data_mark = %d.\n" ,delegate->yuv_video_buf->have_data_mark);
-		//encode
+//		//encode
 		seg_write_frame(delegate->seg_union ,
 						delegate->seg_union->width_capture ,delegate->seg_union->height_caputre ,
 						VIDEO_STREAM_FLAG  ,delegate->yuv_video_buf->yuv_data );
@@ -183,9 +177,6 @@ int main(int argc, char *argv[])
 	seg_write_header(seg_union);
 
 //===========================
-
-//	pthread_mutex_init(&sleepMutex, NULL);
-//	pthread_cond_init(&sleepCond, NULL);
 
 	if (!deckLinkIterator)
 	{
@@ -282,6 +273,12 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
+	//take img_conver_ctx from here
+	delegate->seg_union->output_ctx->img_convert_ctx = sws_getContext(
+			delegate->seg_union->width_capture ,delegate->seg_union->height_caputre ,PIX_FMT_UYVY422,
+			delegate->seg_union->output_ctx->video_stream->codec->width ,delegate->seg_union->output_ctx->video_stream->codec->height ,PIX_FMT_YUV420P ,
+			 SWS_BICUBIC ,NULL ,NULL ,NULL);
+
 	pthread_mutex_init(&delegate->yuv_video_buf->yuv_buf_mutex, NULL);
 	pthread_cond_init(&delegate->yuv_video_buf->yuv_buf_cond, NULL);
 	delegate->yuv_video_buf->have_data_mark = 0;
@@ -328,14 +325,6 @@ int main(int argc, char *argv[])
 
     pthread_join(pid_video_encode ,NULL);
 	// Block main thread until signal occurs
-//	pthread_mutex_lock(&sleepMutex);		//
-//
-//	printf(".....waiting in here ....\n");
-//	pthread_cond_wait(&sleepCond, &sleepMutex);
-//
-//	printf(".....waiting over ....\n\n");
-//	pthread_mutex_unlock(&sleepMutex);
-//	fprintf(stderr, "Stopping Capture\n");
 
 bail:
    	
