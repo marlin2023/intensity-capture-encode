@@ -269,9 +269,11 @@ static void open_video (Output_Context *ptr_output_ctx ,AVStream * st){
 	av_dict_set(&opts, "tune", "film", 0);
 	av_dict_set(&opts, "preset", "slower", 0);
 	//connect the string content x264opts
-	av_dict_set(&opts, "x264opts", "crf=22:vbv-bufsize=650:vbv-maxrate=650:subme=10:trellis=2:bframes=3" ,0);
-
-
+//	av_dict_set(&opts, "x264opts", "crf=22:vbv-bufsize=650:vbv-maxrate=650:subme=10:trellis=2:bframes=3" ,0);
+//	/*crf mode*/
+	av_dict_set(&opts, "x264opts", "crf=28:subme=10:trellis=2:bframes=3:vbv-maxrate=700" ,0);
+	/*vbr mode*/
+//	av_dict_set(&opts, "x264opts", "bitrate=1000:vbv-bufsize=1000:vbv-maxrate=2000:subme=10:trellis=2:bframes=3:nal-hrd=vbr" ,0);
 	//open video encode
 	if(avcodec_open2(video_codec_ctx ,video_encode ,&opts/*NULL*/) < 0){
 

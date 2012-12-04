@@ -15,21 +15,12 @@
 
 #include "Capture_global.h"
 
-int init_seg_union(Segment_U ** segment_union ,int argc ,char * argv[]) {   //传递是指针变量的地址
+int init_seg_union(Segment_U * segment_union) {   //传递是指针变量的地址
 
-	if ((*segment_union = malloc(sizeof(Segment_U))) == NULL) {
-		printf("segment union malloc failed .\n");
-		exit(MEMORY_MALLOC_FAIL);
-	}
 
-	Segment_U * seg_union =(*segment_union);
-	memset(seg_union ,0 ,sizeof(Segment_U));
+	Segment_U * seg_union =segment_union;
 
-	seg_union->mode_type = -1;
 	seg_union->segment_no = 0;
-
-	/*	parse option */
-	parse_option_argument(seg_union ,argc ,argv);
 
 	/*	create directory	*/
 	create_directory(seg_union->storage_dir);
@@ -44,15 +35,14 @@ int init_seg_union(Segment_U ** segment_union ,int argc ,char * argv[]) {   //�
 	printf("seg_union->full_m3u8_name = %s \n" ,seg_union->full_m3u8_name);
 //	while(1);
 	/*	initialize the output file information*/
-	av_register_all();
-	avformat_network_init();
-	//malloc memory
-	if( (seg_union->input_ctx = malloc (sizeof(Input_Context))) == NULL){
 
-		printf("ptr_input_ctx malloc failed .\n");
-		exit(MEMORY_MALLOC_FAIL);
-	}
-	malloc_input_memory(seg_union->input_ctx);
+//	//malloc memory
+//	if( (seg_union->input_ctx = malloc (sizeof(Input_Context))) == NULL){
+//
+//		printf("ptr_input_ctx malloc failed .\n");
+//		exit(MEMORY_MALLOC_FAIL);
+//	}
+//	malloc_input_memory(seg_union->input_ctx);
 
 	if( (seg_union->output_ctx = malloc (sizeof(Output_Context))) == NULL){
 

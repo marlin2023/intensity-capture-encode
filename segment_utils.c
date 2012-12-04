@@ -22,13 +22,13 @@
 #include "chris_error.h"
 #include "segment_yy.h"
 
+int parse_options_chris(int argc, char *argv[]) {
 
-void parse_option_argument(Segment_U * seg_union ,int argc, char *argv[]) {
-
+	int ret = 0;
 	/*parse options*/
 	int next_option;
 	//short char option
-	const char * const short_option = "vhm:d:t:p:n:r:w:e:v:a:s:c:";
+	const char * const short_option = "vhm:d:t:p:n:r:w:e:v:a:s:c:0";
 
 	//long char option struction array
 	const struct option long_option[] = {
@@ -46,6 +46,54 @@ void parse_option_argument(Segment_U * seg_union ,int argc, char *argv[]) {
 			{ "ab", 1, NULL, 'a' }, //audio bitrate
 			{ "sample", 1, NULL, 's' }, //audio sample
 			{ "channel", 1, NULL, 'c' }, //audio channels
+			{ "decollator", 0, NULL, '0' },
+			{ NULL, 0, NULL, 0 }
+	};
+
+	do {
+
+		next_option = getopt_long(argc, argv, short_option, long_option, NULL);
+
+		switch (next_option) {
+
+		case '0':
+			ret ++;
+			break;
+		default:		//there is no options
+			break;
+
+		}
+	} while (next_option != -1);
+
+	return ret;
+}
+
+int parse_option_argument(Segment_U ** seg_union_ptr ,int argc, char *argv[]) {
+
+	Segment_U * seg_union = NULL;
+	int i = 0;
+	/*parse options*/
+	int next_option;
+	//short char option
+	const char * const short_option = "vhm:d:t:p:n:r:w:e:v:a:s:c:0";
+
+	//long char option struction array
+	const struct option long_option[] = {
+			{ "version", 0, NULL, 'v' },
+			{ "help",	0, NULL, 'h' },
+			{ "mode", 1, NULL, 'm' }, //execute mode
+			{ "dir", 1, NULL, 'd' }, //ts storage directory
+			{ "segment_time", 1, NULL, 't' }, //segment duration
+			{ "prefix_ts", 1, NULL, 'p' }, //the prefix in the m3u8 file
+			{ "m3u8_name", 1, NULL, 'n' }, //m3u8 name
+			{ "frame_rate", 1, NULL, 'r' }, //frame rate
+			{ "width", 1, NULL, 'w' }, //video width
+			{ "height", 1, NULL, 'e' }, //video height
+			{ "vb", 1, NULL, 'o' }, //video bitrate
+			{ "ab", 1, NULL, 'a' }, //audio bitrate
+			{ "sample", 1, NULL, 's' }, //audio sample
+			{ "channel", 1, NULL, 'c' }, //audio channels
+			{ "decollator", 0, NULL, '0' },
 			{ NULL, 0, NULL, 0 }
 	};
 
@@ -76,10 +124,38 @@ void parse_option_argument(Segment_U * seg_union ,int argc, char *argv[]) {
 					"--ab				the bitrate of the audio\n"
 					"--sample			the samples of the audio\n"
 					"--channel			audio channel number\n"
-
+					"--decollator		indicator a new program\n"
 					"\n");
 			exit(0);
 //			break;
+		case '0':
+			if(i != 0){
+				if( seg_union->mode_type == -1	||
+						seg_union->m3u8_name == NULL ||
+						seg_union->segment_duration == 0 ||
+						seg_union->storage_dir == NULL ||
+						seg_union->ts_prfix_name == NULL ||
+						seg_union->frame_rate == 0 	||
+						seg_union->width == 0 ||
+						seg_union->height == 0	||
+						seg_union->video_rate == 0 ||
+						seg_union->audio_rate == 0 ||
+						seg_union->sample  == 0 ||
+						seg_union->channel == 0){
+
+					printf("  Segment Invalid argument   ,please use"
+																" '%s  --help '  to find some information\n", argv[0]);
+					exit(SEG_INVALID_ARGUMENT);
+				}
+
+			}
+			seg_union_ptr[i] = (Segment_U *)malloc(sizeof(Segment_U));
+			if(seg_union_ptr[i] == NULL){
+				printf("seg_union malloc failed .\n");
+				exit(1);
+			}
+			seg_union = seg_union_ptr[i++];
+			break;
 		case 'm': //the program work mode
 			seg_union->mode_type = atoi(optarg);
 			break;
@@ -154,6 +230,7 @@ void parse_option_argument(Segment_U * seg_union ,int argc, char *argv[]) {
 		exit(SEG_INVALID_ARGUMENT);
 	}
 
+	return i;
 }
 
 void create_directory(char *storage_dir) {
@@ -207,6 +284,7 @@ void create_first_ts_name(Segment_U * seg_union ,int mode_type){
 
 		sprintf(&(seg_union->ts_name[strlen(seg_union->ts_name)]) ,"%s-1.ts" ,seg_union->ts_prfix_name);
 	}
+
 
 }
 

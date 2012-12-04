@@ -10,11 +10,17 @@
 
 #include "segment_yy.h"
 #include "output_handle.h"
+
 /*
  * function :parse_option
  *
  * */
-void parse_option_argument( Segment_U * segment_union, int argc, char *argv[]);
+int parse_options_chris(int argc, char *argv[]);
+/*
+ * function :parse_option
+ *
+ * */
+int parse_option_argument( Segment_U ** segment_union, int argc, char *argv[]);
 
 
 /*

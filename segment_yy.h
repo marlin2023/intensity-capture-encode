@@ -58,8 +58,7 @@ typedef struct Segment_U{
 
 	AVFrame *picture_capture;
 	unsigned int picture_capture_no;
-	int width_capture;
-	int height_caputre;
+
 
 
 }Segment_U;
@@ -67,7 +66,7 @@ typedef struct Segment_U{
  * function	: init the argument of the struct Segment_U
  *
  * */
-int init_seg_union(Segment_U ** seg_union , int argc ,char * argv[]);  //in here ,allocate memory ,and in the end there should be a function used to release memory
+int init_seg_union(Segment_U * segment_union );  //in here ,allocate memory ,and in the end there should be a function used to release memory
 
 
 

@@ -29,10 +29,13 @@ class DeckLinkCaptureDelegate : public IDeckLinkInputCallback
 {
 public:
 	//
-	Segment_U * seg_union;
-	yuv_video_buf_union *yuv_video_buf;
+	int prog_num;
+	Segment_U *seg_union[3];
+	yuv_video_buf_union *yuv_video_buf[3];
 
 	int quit_mark;
+	int width_capture;
+	int height_caputre;
 	DeckLinkCaptureDelegate();
 	~DeckLinkCaptureDelegate();
 

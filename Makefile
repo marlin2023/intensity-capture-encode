@@ -27,9 +27,9 @@ lib_path=/home/chris/work/ffmpeg/refs/aac_h264/lib
 include_path=/home/chris/work/ffmpeg/refs/aac_h264/include
 
 all:  
-	g++ -c Capture.cpp  DeckLinkAPIDispatch.cpp	-I${include_path}
-	gcc -c segment_utils.c segment_yy.c	input_handle.c 	output_handle.c	-I${include_path}
-	gcc *.o -o capture -lstdc++  -L${lib_path} -lavformat -lavcodec  -lavutil -lswscale -lswresample -lm -ldl -lz -lpthread -lx264  -lfaac
+	g++ -g  -c Capture.cpp  DeckLinkAPIDispatch.cpp	-I${include_path}
+	gcc -g -c segment_utils.c segment_yy.c	input_handle.c 	output_handle.c	-I${include_path}
+	gcc *.o -g  -o capture -lstdc++  -L${lib_path} -lavformat -lavcodec  -lavutil -lswscale -lswresample -lm -ldl -lz -lpthread -lx264  -lfaac
 
 clean:
 	rm -f capture
