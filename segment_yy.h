@@ -66,7 +66,7 @@ typedef struct Segment_U{
  * function	: init the argument of the struct Segment_U
  *
  * */
-int init_seg_union(Segment_U * segment_union );  //in here ,allocate memory ,and in the end there should be a function used to release memory
+int init_seg_union(Segment_U * segment_union ,int prog_no);  //in here ,allocate memory ,and in the end there should be a function used to release memory
 
 
 

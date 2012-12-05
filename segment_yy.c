@@ -15,7 +15,7 @@
 
 #include "Capture_global.h"
 
-int init_seg_union(Segment_U * segment_union) {   //传递是指针变量的地址
+int init_seg_union(Segment_U * segment_union ,int prog_no) {   //传递是指针变量的地址
 
 
 	Segment_U * seg_union =segment_union;
@@ -59,10 +59,11 @@ int init_seg_union(Segment_U * segment_union) {   //传递是指针变量的地�
 	seg_union->output_ctx->sample					=		 seg_union->sample;							//audio sample
 	seg_union->output_ctx->channel					=		 seg_union->channel;						//audio channels
 
+	seg_union->output_ctx->frame_count = 0;
 	//initialize the output context
-	init_output(seg_union->output_ctx ,seg_union->ts_name );
+	init_output(seg_union->output_ctx ,seg_union->ts_name );  //add stream information in this function
 	//open video and audio ,set video_out_buf and audio_out_buf
-	open_stream_codec(seg_union->output_ctx);
+	open_stream_codec(seg_union->output_ctx ,prog_no);
 	printf("--------------->after transcode init function ..\n");
 
 	/*segment element in output context*/
@@ -101,6 +102,9 @@ int seg_write_frame(Segment_U * seg_union ,int input_width ,int input_height ,in
 
 	Output_Context *ptr_output_ctx = seg_union->output_ctx;
 
+//	if(ptr_output_ctx->width == 640){
+//				printf("$$$$$$$$$$$$$$$$$$$$$$..................hahha ...\n");
+//			}
 //	//take img_conver_ctx from here (must be free)
 //	ptr_output_ctx->img_convert_ctx = sws_getContext(
 //			input_width ,input_height ,PIX_FMT_UYVY422,
@@ -114,7 +118,6 @@ int seg_write_frame(Segment_U * seg_union ,int input_width ,int input_height ,in
 		//input stream 的问题。
 		ptr_output_ctx->sync_ipts = (double) seg_union->picture_capture_no / CAPTURE_FRAME_RATE ; //converter in seconds
 
-		//printf("ptr_output_ctx->sync_ipts = %f , frame_no = %u \n" ,ptr_output_ctx->sync_ipts ,seg_union->picture_capture_no);
 
 		//first swscale
 		sws_scale(ptr_output_ctx->img_convert_ctx,
@@ -124,11 +127,14 @@ int seg_write_frame(Segment_U * seg_union ,int input_width ,int input_height ,in
 				ptr_output_ctx->encoded_yuv_pict->data,
 				ptr_output_ctx->encoded_yuv_pict->linesize);
 
+
+//		if(ptr_output_ctx->width == 640){
+//						printf("1$$$$$$$$$$$$$$$$$$$$$$$$$..................hahha ...\n");
+//					}
 		//second swscale
 		encode_video_frame(ptr_output_ctx, ptr_output_ctx->encoded_yuv_pict,
 				NULL);
 
-		//printf(".....encode one frame ...\n\n");
 
 	return 0;
 }

@@ -248,7 +248,7 @@ int init_output(Output_Context *ptr_output_ctx, char* output_file ){
 
 
 //===========================================================
-static void open_video (Output_Context *ptr_output_ctx ,AVStream * st){
+static void open_video (Output_Context *ptr_output_ctx ,AVStream * st ,int prog_no){
 
 	AVCodec *video_encode;
 	AVCodecContext *video_codec_ctx;
@@ -264,14 +264,34 @@ static void open_video (Output_Context *ptr_output_ctx ,AVStream * st){
 
 	AVDictionary *opts = NULL;
 
-	av_dict_set(&opts, "profile", "high", 0);
-	av_dict_set(&opts, "level", "21", 0);
-	av_dict_set(&opts, "tune", "film", 0);
-	av_dict_set(&opts, "preset", "slower", 0);
-	//connect the string content x264opts
-//	av_dict_set(&opts, "x264opts", "crf=22:vbv-bufsize=650:vbv-maxrate=650:subme=10:trellis=2:bframes=3" ,0);
-//	/*crf mode*/
-	av_dict_set(&opts, "x264opts", "crf=28:subme=10:trellis=2:bframes=3:vbv-maxrate=700" ,0);
+	if(prog_no == 0){
+		av_dict_set(&opts, "profile", "high", 0);
+		av_dict_set(&opts, "level", "21", 0);
+		av_dict_set(&opts, "tune", "film", 0);
+		av_dict_set(&opts, "preset", "slower", 0);
+		//connect the string content x264opts
+		av_dict_set(&opts, "x264opts", "crf=28:subme=10:trellis=2:bframes=3:vbv-maxrate=500:vbv-bufsize=1000" ,0);
+
+	}else if(prog_no == 1){
+		av_dict_set(&opts, "profile", "high", 0);
+		av_dict_set(&opts, "level", "31", 0);
+		av_dict_set(&opts, "tune", "film", 0);
+		av_dict_set(&opts, "preset", "slower", 0);
+		//connect the string content x264opts
+		av_dict_set(&opts, "x264opts", "crf=22:subme=10:trellis=2:bframes=3:vbv-maxrate=1000:vbv-bufsize=2000" ,0);
+
+	}else if(prog_no == 2){
+		av_dict_set(&opts, "profile", "high", 0);
+		av_dict_set(&opts, "level", "31", 0);
+		av_dict_set(&opts, "tune", "film", 0);
+		av_dict_set(&opts, "preset", "slower", 0);
+		//connect the string content x264opts
+		av_dict_set(&opts, "x264opts", "crf=20:subme=10:trellis=2:bframes=3:vbv-maxrate=2000:vbv-bufsize=4000" ,0);
+
+	}
+
+
+
 	/*vbr mode*/
 //	av_dict_set(&opts, "x264opts", "bitrate=1000:vbv-bufsize=1000:vbv-maxrate=2000:subme=10:trellis=2:bframes=3:nal-hrd=vbr" ,0);
 	//open video encode
@@ -353,9 +373,9 @@ static void open_audio (Output_Context *ptr_output_ctx ,AVStream * st){
 }
 
 
-void open_stream_codec(Output_Context *ptr_output_ctx){
+void open_stream_codec(Output_Context *ptr_output_ctx ,int prog_no){
 
-	open_video (ptr_output_ctx ,ptr_output_ctx->video_stream);
+	open_video (ptr_output_ctx ,ptr_output_ctx->video_stream ,prog_no);
 
 	open_audio (ptr_output_ctx ,ptr_output_ctx->audio_stream);
 
@@ -364,7 +384,7 @@ void open_stream_codec(Output_Context *ptr_output_ctx){
 void encode_video_frame(Output_Context *ptr_output_ctx, AVFrame *pict,
 		Input_Context *ptr_input_ctx ) {
 
-	static int frame_count = 0;
+//	static int frame_count = 0;			// use multiple ,do not define static variable in function
 	int nb_frames;
 	double sync_ipts;
 	double duration = 0;
@@ -391,7 +411,7 @@ void encode_video_frame(Output_Context *ptr_output_ctx, AVFrame *pict,
 
 
     //compute the vdelta ,do not forget the duration
-    double vdelta = sync_ipts - frame_count + duration;
+    double vdelta = sync_ipts - ptr_output_ctx->frame_count + duration;
 
 	// FIXME set to 0.5 after we fix some dts/pts bugs like in avidec.c
 	if (vdelta < -1.1)
@@ -400,13 +420,12 @@ void encode_video_frame(Output_Context *ptr_output_ctx, AVFrame *pict,
 		nb_frames = lrintf(vdelta);
 
 
-  //  printf("nb_frames = %d \n" ,nb_frames);
 	//set chris_count
 	int tmp_count;
 	for (tmp_count = 0; tmp_count < nb_frames; tmp_count++) {
 		//encode the image
 		int video_encoded_out_size;
-		pict->pts = frame_count++;
+		pict->pts = ptr_output_ctx->frame_count++;
 
 		video_encoded_out_size = avcodec_encode_video(
 				ptr_output_ctx->video_stream->codec,
@@ -421,6 +440,7 @@ void encode_video_frame(Output_Context *ptr_output_ctx, AVFrame *pict,
 //		if (video_encoded_out_size == 0)  //the first several number  pict ,there will no data to output because of the AVCodecContext buffer
 //			return;
 		//in here ,video_encodec_out_size > 0
+
 		if(video_encoded_out_size > 0){
 			//AVPacket pkt; //use ptr_output_ctx->pkt instead
 			av_init_packet(&ptr_output_ctx->pkt);
@@ -456,8 +476,9 @@ void encode_video_frame(Output_Context *ptr_output_ctx, AVFrame *pict,
 }
 
 
-void encode_audio_frame(Output_Context *ptr_output_ctx , uint8_t *buf ,int buf_size){
+void encode_audio_frame(Output_Context *ptr_output_ctx1[] , uint8_t *buf ,int buf_size ,int prog_num){
 
+	Output_Context *ptr_output_ctx = ptr_output_ctx1[0];
 	int ret;
 	AVCodecContext *c = ptr_output_ctx->audio_stream->codec;
 
@@ -491,7 +512,12 @@ void encode_audio_frame(Output_Context *ptr_output_ctx , uint8_t *buf ,int buf_s
 	pkt.pts = 0;
 	pkt.stream_index = ptr_output_ctx->audio_stream->index;
 
-	av_write_frame(ptr_output_ctx->ptr_format_ctx, &pkt);
+
+//	av_write_frame(ptr_output_ctx->ptr_format_ctx, &pkt);
+	int i = 0;
+	for(i = 0 ;i < prog_num ; i ++){
+		av_write_frame(ptr_output_ctx1[i]->ptr_format_ctx, &pkt);
+	}
 
 	av_free(frame);
 	av_free_packet(&pkt);
@@ -545,7 +571,7 @@ void encode_flush(Output_Context *ptr_output_ctx , int nb_ostreams){
 					generate_silence(ptr_output_ctx->audio_buf+fifo_bytes, enc->sample_fmt, frame_bytes - fifo_bytes);
 
 					printf("audio ...........\n");
-					encode_audio_frame(ptr_output_ctx, ptr_output_ctx->audio_buf, frame_bytes);
+//					encode_audio_frame(ptr_output_ctx, ptr_output_ctx->audio_buf, frame_bytes);  //???????
 
 				} else {
 					/* flush encoder with NULL frames until it is done
@@ -636,8 +662,9 @@ void encode_flush(Output_Context *ptr_output_ctx , int nb_ostreams){
 }
 
 
-void do_audio_out(Output_Context *ptr_output_ctx ,void * src_audio_buf ,int src_audio_buf_size ,int nb_sample){
+void do_audio_out(Output_Context *ptr_output_ctx1[] ,void * src_audio_buf ,int src_audio_buf_size ,int nb_sample ,int prog_num){
 
+	Output_Context *ptr_output_ctx = ptr_output_ctx1[0];
 	enum AVSampleFormat dec_sample_fmt = AV_SAMPLE_FMT_S16;
 	uint64_t dec_layout_channel = 0;
 	uint8_t *buftmp;
@@ -748,7 +775,8 @@ void do_audio_out(Output_Context *ptr_output_ctx ,void * src_audio_buf ,int src_
 		while (av_fifo_size(ptr_output_ctx->fifo) >= frame_bytes) {
 //			printf("av_fifo_size(ost->fifo) = %d ,frame_bytes = %d\n" ,av_fifo_size(ptr_output_ctx->fifo) ,frame_bytes);
 			av_fifo_generic_read(ptr_output_ctx->fifo, ptr_output_ctx->audio_buf, frame_bytes, NULL);
-			encode_audio_frame(ptr_output_ctx, ptr_output_ctx->audio_buf, frame_bytes);
+
+			encode_audio_frame(ptr_output_ctx1, ptr_output_ctx->audio_buf, frame_bytes ,prog_num);
 			//printf("encode audio ....\n");
 		}
 

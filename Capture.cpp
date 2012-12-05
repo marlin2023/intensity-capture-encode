@@ -75,13 +75,13 @@ HRESULT DeckLinkCaptureDelegate::VideoInputFrameArrived(IDeckLinkVideoInputFrame
 			videoFrame->GetBytes(&frameBytes);
 
 			int i ;
-			for(i = 0; i < this->prog_num ; i ++){
+			for(i = 0; i <this->prog_num ; i ++){
 
 				if( pthread_mutex_trylock(&this->yuv_video_buf[i]->yuv_buf_mutex) == 0){ //lock sucess
 
-					printf("have_data_mark = %d \n" ,this->yuv_video_buf[i]->have_data_mark);
 					if(this->yuv_video_buf[i]->have_data_mark == 0){
-						this->yuv_video_buf[i]->yuv_data = (unsigned char *)frameBytes;
+//						this->yuv_video_buf[i]->yuv_data = (unsigned char *)frameBytes;
+						memcpy(this->yuv_video_buf[i]->yuv_data ,(unsigned char *)frameBytes ,this->width_capture * this->height_caputre * 2);
 
 						this->yuv_video_buf[i]->have_data_mark = 1; // not set
 						pthread_cond_signal(&this->yuv_video_buf[i]->yuv_buf_cond);
@@ -92,10 +92,16 @@ HRESULT DeckLinkCaptureDelegate::VideoInputFrameArrived(IDeckLinkVideoInputFrame
 					pthread_mutex_unlock(&this->yuv_video_buf[i]->yuv_buf_mutex);
 				}
 
+				this->seg_union[i]->picture_capture_no ++ ;			//here ,do not forget
 			}
+//			this->seg_union[0]->picture_capture_no ++ ;			//here ,do not forget
+//			this->seg_union[1]->picture_capture_no ++ ;
+	//		this->seg_union[2]->picture_capture_no ++ ;
+
 		}
 
-//		this->seg_union->picture_capture_no ++ ;
+//		printf("======num1=%d ,num2=%d ,num3=%d \n" ,this->seg_union[0]->picture_capture_no ,this->seg_union[1]->picture_capture_no ,this->seg_union[2]->picture_capture_no);
+//		sleep(1);
 	}
 
 	/* Handle Audio Frame */
@@ -105,10 +111,21 @@ HRESULT DeckLinkCaptureDelegate::VideoInputFrameArrived(IDeckLinkVideoInputFrame
 		int haha = audioFrame->GetSampleFrameCount() * CAPTURE_AUDIO_CHANNEL_NUM * (CAPTURE_AUDIO_SAMPLE_DEPTH / 8);
 		audioFrame->GetBytes(&audioFrameBytes);
 		int i;
+
+		static int iii = 1;
+		static Output_Context *output_ctx1[3];
+		if(iii == 1){
+			iii = 0;
+			int j;
+			for(j = 0; j < this->prog_num ; j ++){
+				output_ctx1[j] = this->seg_union[j]->output_ctx;
+			}
+		}
+		//here ,can not encode only one time ,but write according the prog_num
 		for(i = 0; i < 1 ; i ++){
-			do_audio_out(this->seg_union[i]->output_ctx ,audioFrameBytes
+			do_audio_out(output_ctx1 ,audioFrameBytes
 							,audioFrame->GetSampleFrameCount() * CAPTURE_AUDIO_CHANNEL_NUM * (CAPTURE_AUDIO_SAMPLE_DEPTH / 8)
-							,audioFrame->GetSampleFrameCount());
+							,audioFrame->GetSampleFrameCount() ,this->prog_num);
 		}
 
 //			write(audioOutputFile, audioFrameBytes, audioFrame->GetSampleFrameCount() * AUDIO_CHANNEL_NUM * (AUDIO_SAMPLE_DEPTH / 8));
@@ -130,11 +147,9 @@ void * encode_yuv_data( void *void_del){
 		pthread_mutex_lock(&delegate->yuv_video_buf[0]->yuv_buf_mutex);
 
 		if(delegate->yuv_video_buf[0]->have_data_mark == 0){
-			printf("encode wait ...\n");
 			pthread_cond_wait(&delegate->yuv_video_buf[0]->yuv_buf_cond ,&delegate->yuv_video_buf[0]->yuv_buf_mutex);
-			printf("after wait ...\n");
 		}
-		printf("after wait 1.. ,have_data_mark = %d.\n" ,delegate->yuv_video_buf[0]->have_data_mark);
+		//printf("after wait 1.. ,have_data_mark = %d.\n" ,delegate->yuv_video_buf[0]->have_data_mark);
 //		//encode
 		seg_write_frame(delegate->seg_union[0] ,
 						delegate->width_capture ,delegate->height_caputre ,
@@ -160,12 +175,11 @@ void * encode_yuv_data1( void *void_del){
 		pthread_mutex_lock(&delegate->yuv_video_buf[1]->yuv_buf_mutex);
 
 		if(delegate->yuv_video_buf[1]->have_data_mark == 0){
-			printf("encode wait ...\n");
 			pthread_cond_wait(&delegate->yuv_video_buf[1]->yuv_buf_cond ,&delegate->yuv_video_buf[1]->yuv_buf_mutex);
-			printf("after wait ...\n");
 		}
-		printf("after wait 1.. ,have_data_mark = %d.\n" ,delegate->yuv_video_buf[1]->have_data_mark);
+		//printf("after wait 1.. ,have_data_mark = %d.\n" ,delegate->yuv_video_buf[1]->have_data_mark);
 //		//encode
+
 		seg_write_frame(delegate->seg_union[1] ,
 						delegate->width_capture ,delegate->height_caputre ,
 						VIDEO_STREAM_FLAG  ,delegate->yuv_video_buf[1]->yuv_data );
@@ -192,7 +206,7 @@ void * encode_yuv_data2( void *void_del){
 		if(delegate->yuv_video_buf[2]->have_data_mark == 0){
 			pthread_cond_wait(&delegate->yuv_video_buf[2]->yuv_buf_cond ,&delegate->yuv_video_buf[2]->yuv_buf_mutex);
 		}
-		printf("after wait 1.. ,have_data_mark = %d.\n" ,delegate->yuv_video_buf[2]->have_data_mark);
+		//printf("after wait 1.. ,have_data_mark = %d.\n" ,delegate->yuv_video_buf[2]->have_data_mark);
 //		//encode
 		seg_write_frame(delegate->seg_union[2] ,
 						delegate->width_capture ,delegate->height_caputre ,
@@ -256,7 +270,7 @@ int main(int argc, char *argv[])
 
 	delegate = new DeckLinkCaptureDelegate();
 //	delegate->seg_union = seg_union;		//set seg_union
-	deckLinkInput->SetCallback(delegate);	//Register input callback
+//	deckLinkInput->SetCallback(delegate);	//Register input callback
    
 	result = deckLinkInput->GetDisplayModeIterator(&displayModeIterator);
 	if (result != S_OK)
@@ -319,7 +333,7 @@ int main(int argc, char *argv[])
 	//==============================================
 	//parse the option
 	delegate->prog_num = parse_option_argument(delegate->seg_union ,argc ,argv);
-	printf("prog_num = %d \n" ,delegate->prog_num);
+	printf("prog_num = %d ,width = %d ,height = %d  \n" ,delegate->prog_num ,delegate->width_capture  ,delegate->height_caputre);
 
 	av_register_all();
 	avformat_network_init();
@@ -328,7 +342,7 @@ int main(int argc, char *argv[])
 	for(i = 0; i < delegate->prog_num ; i ++){
 
 		/*Segment union */
-		init_seg_union(delegate->seg_union[i]);
+		init_seg_union(delegate->seg_union[i] ,i );
 		seg_write_header(delegate->seg_union[i]);
 
 		/*	init yuv_video_buffer*/
@@ -357,9 +371,10 @@ int main(int argc, char *argv[])
 
 	}
 
+	deckLinkInput->SetCallback(delegate);
 	printf("width = %d ,height = %d \n" ,delegate->seg_union[0]->width ,delegate->seg_union[0]->height);
-	printf("width = %d ,height = %d \n" ,delegate->seg_union[1]->width ,delegate->seg_union[1]->height);
-	printf("width = %d ,height = %d \n" ,delegate->seg_union[2]->width ,delegate->seg_union[2]->height);
+//	printf("width = %d ,height = %d \n" ,delegate->seg_union[1]->width ,delegate->seg_union[1]->height);
+//	printf("width = %d ,height = %d \n" ,delegate->seg_union[2]->width ,delegate->seg_union[2]->height);
 //	while(1);
 
 
@@ -372,11 +387,19 @@ int main(int argc, char *argv[])
 	pthread_t pid_video_encode;
 	pthread_create(&pid_video_encode , NULL ,encode_yuv_data ,delegate);
 
-	pthread_t pid_video_encode1;
-	pthread_create(&pid_video_encode1 , NULL ,encode_yuv_data1 ,delegate);
+	if(delegate->prog_num == 2){  //two different bitrate
+		pthread_t pid_video_encode1;
+		pthread_create(&pid_video_encode1 , NULL ,encode_yuv_data1 ,delegate);
+	}else if(delegate->prog_num == 3){ //three different bitrate
+		pthread_t pid_video_encode1;
+		pthread_create(&pid_video_encode1 , NULL ,encode_yuv_data1 ,delegate);
 
-	pthread_t pid_video_encode2;
-	pthread_create(&pid_video_encode2 , NULL ,encode_yuv_data2 ,delegate);
+		pthread_t pid_video_encode2;
+		pthread_create(&pid_video_encode2 , NULL ,encode_yuv_data2 ,delegate);
+	}
+
+
+
 
 	//*****************************************************************
 	/*
