@@ -94,14 +94,9 @@ HRESULT DeckLinkCaptureDelegate::VideoInputFrameArrived(IDeckLinkVideoInputFrame
 
 				this->seg_union[i]->picture_capture_no ++ ;			//here ,do not forget
 			}
-//			this->seg_union[0]->picture_capture_no ++ ;			//here ,do not forget
-//			this->seg_union[1]->picture_capture_no ++ ;
-	//		this->seg_union[2]->picture_capture_no ++ ;
 
 		}
 
-//		printf("======num1=%d ,num2=%d ,num3=%d \n" ,this->seg_union[0]->picture_capture_no ,this->seg_union[1]->picture_capture_no ,this->seg_union[2]->picture_capture_no);
-//		sleep(1);
 	}
 
 	/* Handle Audio Frame */
@@ -331,7 +326,7 @@ int main(int argc, char *argv[])
 	//*****************************************************************
 	//in here ,find capture card mode
 	//==============================================
-	//parse the option
+	/*	parse the option */
 	delegate->prog_num = parse_option_argument(delegate->seg_union ,argc ,argv);
 	printf("prog_num = %d ,width = %d ,height = %d  \n" ,delegate->prog_num ,delegate->width_capture  ,delegate->height_caputre);
 

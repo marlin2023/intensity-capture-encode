@@ -21,8 +21,8 @@
 typedef struct Segment_U{
 
 	/*input file for segment info*/
-	int input_nb;						//input file number
-	char *input_file[MAX_INPUT_NUM];					//one or more file
+//	int input_nb;						//input file number
+//	char *input_file[MAX_INPUT_NUM];					//one or more file
 
 	/*output for segment info */
 	int mode_type;						//YY_TRANSCODE ,YY_VOD ,YY_LIVE
@@ -31,14 +31,14 @@ typedef struct Segment_U{
 	//怎么把这几个变量放在output里面去就可以了。
 	int dir_name_len;
 	char ts_name[1024] ;						//ts name (rely on the mode_type )
-	double segment_duration;			//every segment duration
+	double segment_duration;					// segment target duration
 	//m3u8
 	char *m3u8_name;							//m3u8 name
 	char full_m3u8_name[1024];
 	char *ts_prfix_name;				//the prefix of the ts in the m3u8 file，if just transcode ,this is the ts file prefix
 
-	/*	input file decode	*/
-	Input_Context *input_ctx;
+//	/*	input file decode	*/
+//	Input_Context *input_ctx;
 
 	/*	output file encode	*/
 	Output_Context *output_ctx;
@@ -55,6 +55,10 @@ typedef struct Segment_U{
 	int audio_rate;						//audio bitrate
 	int sample;							//audio sample
 	int channel;						//audio channels
+
+	//ts num
+	int num_in_dir;						//ts number in the directory
+	int num_in_m3u8;					//ts record in the m3u8 list
 
 	AVFrame *picture_capture;
 	unsigned int picture_capture_no;

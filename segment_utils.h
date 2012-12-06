@@ -11,6 +11,16 @@
 #include "segment_yy.h"
 #include "output_handle.h"
 
+#define 		bool_interger	0			//configure the ts file accuracy
+#ifdef CHRIS
+#define  chris_print(format, ...) { \
+printf (format, ##__VA_ARGS__); \
+fflush (stdout); \
+}
+#esle
+#define chris_print(format ,...)
+#endif
+
 /*
  * function :parse_option
  *

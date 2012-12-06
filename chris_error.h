@@ -43,6 +43,10 @@
 #define		CREAT_M3U8_DIR_FAIL				0x43
 #define		OPEN_M3U8_FAIL					0x44
 
+#define		ALLOCATE_M3U8_WRITE_BUFFER_LIVE	0x46
+#define		WRITE_M3U8_FAIL					0x47
+
+
 
 
 

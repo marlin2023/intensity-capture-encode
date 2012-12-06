@@ -242,6 +242,21 @@ int init_output(Output_Context *ptr_output_ctx, char* output_file ){
 	}
 	av_log(NULL, AV_LOG_WARNING ,"--av_fifo_size(ost->fifo) = %d \n" ,av_fifo_size(ptr_output_ctx->fifo));  //输出是0？！
 
+	/*	live something	*/
+	//malloc live_buffer for m3u8 buffer
+	ptr_output_ctx->live_write_buf = malloc(sizeof(char) * 1024 * 100);
+	if (!ptr_output_ctx->live_write_buf) {
+		fprintf(stderr, "Could not allocate write buffer for live_write_buf\n");
+		exit(ALLOCATE_M3U8_WRITE_BUFFER_LIVE);
+	}
+	memset(ptr_output_ctx->live_write_buf ,0  ,2048);
+
+	ptr_output_ctx->seg_duration_arr = malloc(sizeof(double) *  ( ptr_output_ctx->num_in_m3u8 + 1) );  	//use to storage the every ts file length in the m3u8 ,the array[0] reserved
+	if(ptr_output_ctx->seg_duration_arr == NULL){
+		printf("seg_duration_arr malloc failed ..\n");
+		exit(MEMORY_MALLOC_FAIL);
+	}
+
 
 	return 0;
 }
@@ -270,7 +285,7 @@ static void open_video (Output_Context *ptr_output_ctx ,AVStream * st ,int prog_
 		av_dict_set(&opts, "tune", "film", 0);
 		av_dict_set(&opts, "preset", "slower", 0);
 		//connect the string content x264opts
-		av_dict_set(&opts, "x264opts", "crf=28:subme=10:trellis=2:bframes=3:vbv-maxrate=500:vbv-bufsize=1000" ,0);
+		av_dict_set(&opts, "x264opts", "crf=28:subme=10:trellis=2:bframes=3:vbv-maxrate=500:vbv-bufsize=1000:force-cfr=1" ,0);
 
 	}else if(prog_no == 1){
 		av_dict_set(&opts, "profile", "high", 0);
@@ -278,7 +293,7 @@ static void open_video (Output_Context *ptr_output_ctx ,AVStream * st ,int prog_
 		av_dict_set(&opts, "tune", "film", 0);
 		av_dict_set(&opts, "preset", "slower", 0);
 		//connect the string content x264opts
-		av_dict_set(&opts, "x264opts", "crf=22:subme=10:trellis=2:bframes=3:vbv-maxrate=1000:vbv-bufsize=2000" ,0);
+		av_dict_set(&opts, "x264opts", "crf=22:subme=10:trellis=2:bframes=3:vbv-maxrate=1000:vbv-bufsize=2000:force-cfr=1" ,0);
 
 	}else if(prog_no == 2){
 		av_dict_set(&opts, "profile", "high", 0);
@@ -286,7 +301,7 @@ static void open_video (Output_Context *ptr_output_ctx ,AVStream * st ,int prog_
 		av_dict_set(&opts, "tune", "film", 0);
 		av_dict_set(&opts, "preset", "slower", 0);
 		//connect the string content x264opts
-		av_dict_set(&opts, "x264opts", "crf=20:subme=10:trellis=2:bframes=3:vbv-maxrate=2000:vbv-bufsize=4000" ,0);
+		av_dict_set(&opts, "x264opts", "crf=20:subme=10:trellis=2:bframes=3:vbv-maxrate=2000:vbv-bufsize=4000:force-cfr=1" ,0);
 
 	}
 
@@ -458,7 +473,7 @@ void encode_video_frame(Output_Context *ptr_output_ctx, AVFrame *pict,
 			if (ptr_output_ctx->video_stream->codec->coded_frame->key_frame)
 				ptr_output_ctx->pkt.flags |= AV_PKT_FLAG_KEY;
 
-#if 0
+#if 1
 			//judge if key frame or not
 			if(ptr_output_ctx->pkt.flags && AV_PKT_FLAG_KEY){
 				//init segment_time
@@ -466,6 +481,8 @@ void encode_video_frame(Output_Context *ptr_output_ctx, AVFrame *pict,
 
 			}
 #endif
+
+//			printf(" stream_index = %d \n" ,ptr_output_ctx->pkt.stream_index);
 			av_write_frame(ptr_output_ctx->ptr_format_ctx, &ptr_output_ctx->pkt);
 
 			av_free_packet(&ptr_output_ctx->pkt);

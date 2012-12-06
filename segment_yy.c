@@ -33,16 +33,6 @@ int init_seg_union(Segment_U * segment_union ,int prog_no) {   //传递是指针
 
 	printf("--------------->before transcode init function  ,seg_union->ts_name = %s..\n" ,seg_union->ts_name);
 	printf("seg_union->full_m3u8_name = %s \n" ,seg_union->full_m3u8_name);
-//	while(1);
-	/*	initialize the output file information*/
-
-//	//malloc memory
-//	if( (seg_union->input_ctx = malloc (sizeof(Input_Context))) == NULL){
-//
-//		printf("ptr_input_ctx malloc failed .\n");
-//		exit(MEMORY_MALLOC_FAIL);
-//	}
-//	malloc_input_memory(seg_union->input_ctx);
 
 	if( (seg_union->output_ctx = malloc (sizeof(Output_Context))) == NULL){
 
@@ -76,6 +66,10 @@ int init_seg_union(Segment_U * segment_union ,int prog_no) {   //传递是指针
 	seg_union->output_ctx->full_m3u8_name			=		 seg_union->full_m3u8_name;
 	seg_union->output_ctx->mode_type				=		 seg_union->mode_type;
 
+	//add ts num_remain in m3u8 and dir
+	seg_union->output_ctx->num_in_dir = seg_union->num_in_dir;
+	seg_union->output_ctx->num_in_m3u8 = seg_union->num_in_m3u8;
+
 	//add
 	seg_union->picture_capture = avcodec_alloc_frame();
 	seg_union->picture_capture_no = 0;
@@ -102,38 +96,25 @@ int seg_write_frame(Segment_U * seg_union ,int input_width ,int input_height ,in
 
 	Output_Context *ptr_output_ctx = seg_union->output_ctx;
 
-//	if(ptr_output_ctx->width == 640){
-//				printf("$$$$$$$$$$$$$$$$$$$$$$..................hahha ...\n");
-//			}
-//	//take img_conver_ctx from here (must be free)
-//	ptr_output_ctx->img_convert_ctx = sws_getContext(
-//			input_width ,input_height ,PIX_FMT_UYVY422,
-//			 ptr_output_ctx->video_stream->codec->width ,ptr_output_ctx->video_stream->codec->height ,PIX_FMT_YUV420P ,
-//			 SWS_BICUBIC ,NULL ,NULL ,NULL);
 
 
-
-		avpicture_fill((AVPicture *)seg_union->picture_capture ,(uint8_t*)yuv_data , PIX_FMT_UYVY422 ,input_width ,input_height );
-			//encode video
-		//input stream 的问题。
-		ptr_output_ctx->sync_ipts = (double) seg_union->picture_capture_no / CAPTURE_FRAME_RATE ; //converter in seconds
-
-
-		//first swscale
-		sws_scale(ptr_output_ctx->img_convert_ctx,
-				(const uint8_t* const *) seg_union->picture_capture->data,
-				seg_union->picture_capture->linesize, 0,
-				input_height,
-				ptr_output_ctx->encoded_yuv_pict->data,
-				ptr_output_ctx->encoded_yuv_pict->linesize);
+	avpicture_fill((AVPicture *)seg_union->picture_capture ,(uint8_t*)yuv_data , PIX_FMT_UYVY422 ,input_width ,input_height );
+		//encode video
+	//input stream 的问题。
+	ptr_output_ctx->sync_ipts = (double) seg_union->picture_capture_no / CAPTURE_FRAME_RATE ; //converter in seconds
 
 
-//		if(ptr_output_ctx->width == 640){
-//						printf("1$$$$$$$$$$$$$$$$$$$$$$$$$..................hahha ...\n");
-//					}
-		//second swscale
-		encode_video_frame(ptr_output_ctx, ptr_output_ctx->encoded_yuv_pict,
-				NULL);
+	//first swscale
+	sws_scale(ptr_output_ctx->img_convert_ctx,
+			(const uint8_t* const *) seg_union->picture_capture->data,
+			seg_union->picture_capture->linesize, 0,
+			input_height,
+			ptr_output_ctx->encoded_yuv_pict->data,
+			ptr_output_ctx->encoded_yuv_pict->linesize);
+
+	//second swscale
+	encode_video_frame(ptr_output_ctx, ptr_output_ctx->encoded_yuv_pict,
+			NULL);
 
 
 	return 0;
@@ -152,7 +133,7 @@ int seg_write_tailer(Segment_U * seg_union){
 	return 0;
 }
 
-
+#if 0
 int seg_transcode_main(Segment_U * seg_union){
 
 	Output_Context *ptr_output_ctx = seg_union->output_ctx;
@@ -280,15 +261,11 @@ int seg_transcode_main(Segment_U * seg_union){
 	return 0;
 }
 
+#endif
+
 
 int free_seg_union(Segment_U * seg_union){
 	printf("start free segment union ...\n");
-
-	//free input context relevance
-	free_input_memory(seg_union->input_ctx);
-
-	if(seg_union->input_ctx)
-		free(seg_union->input_ctx);
 
 	//free output context relevance
 	free_output_memory(seg_union->output_ctx);

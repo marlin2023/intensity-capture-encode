@@ -75,6 +75,13 @@ typedef struct {
 
 	int frame_count;
 
+	/*	for live	*/
+	//ts num
+	int num_in_dir;						//ts number in the directory
+	int num_in_m3u8;					//ts record in the m3u8 list
+	char *live_write_buf;				//write the m3u8 for the live situation
+	double *seg_duration_arr;			//use to storage the ts files length ,is array
+
 }Output_Context;
 
 /*

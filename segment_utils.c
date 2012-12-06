@@ -75,7 +75,7 @@ int parse_option_argument(Segment_U ** seg_union_ptr ,int argc, char *argv[]) {
 	/*parse options*/
 	int next_option;
 	//short char option
-	const char * const short_option = "vhm:d:t:p:n:r:w:e:v:a:s:c:0";
+	const char * const short_option = "vhm:d:t:p:n:r:w:e:v:a:s:c:02:3:";
 
 	//long char option struction array
 	const struct option long_option[] = {
@@ -93,7 +93,9 @@ int parse_option_argument(Segment_U ** seg_union_ptr ,int argc, char *argv[]) {
 			{ "ab", 1, NULL, 'a' }, //audio bitrate
 			{ "sample", 1, NULL, 's' }, //audio sample
 			{ "channel", 1, NULL, 'c' }, //audio channels
-			{ "decollator", 0, NULL, '0' },
+			{ "decollator", 0, NULL, '0' },		//indicator a new bitrate
+			{ "num_in_dir", 1, NULL, '2' },
+			{ "num_in_m3u8", 1, NULL, '3' },
 			{ NULL, 0, NULL, 0 }
 	};
 
@@ -125,6 +127,8 @@ int parse_option_argument(Segment_U ** seg_union_ptr ,int argc, char *argv[]) {
 					"--sample			the samples of the audio\n"
 					"--channel			audio channel number\n"
 					"--decollator		indicator a new program\n"
+					"--num_in_dir		completed ts-file number in the directory\n"
+					"--num_in_m3u8		ts record saved in the m3u8 list\n"
 					"\n");
 			exit(0);
 //			break;
@@ -141,7 +145,9 @@ int parse_option_argument(Segment_U ** seg_union_ptr ,int argc, char *argv[]) {
 						seg_union->video_rate == 0 ||
 						seg_union->audio_rate == 0 ||
 						seg_union->sample  == 0 ||
-						seg_union->channel == 0){
+						seg_union->channel == 0	||
+						seg_union->num_in_dir == 0 ||
+						seg_union->num_in_m3u8 == 0){
 
 					printf("  Segment Invalid argument   ,please use"
 																" '%s  --help '  to find some information\n", argv[0]);
@@ -155,6 +161,13 @@ int parse_option_argument(Segment_U ** seg_union_ptr ,int argc, char *argv[]) {
 				exit(1);
 			}
 			seg_union = seg_union_ptr[i++];
+			break;
+
+		case '2':  //num_in_dir
+			seg_union->num_in_dir = atoi(optarg);
+			break;
+		case '3':  //num_in_m3u8
+			seg_union->num_in_m3u8 = atoi(optarg);
 			break;
 		case 'm': //the program work mode
 			seg_union->mode_type = atoi(optarg);
@@ -223,7 +236,9 @@ int parse_option_argument(Segment_U ** seg_union_ptr ,int argc, char *argv[]) {
 			seg_union->video_rate == 0 ||
 			seg_union->audio_rate == 0 ||
 			seg_union->sample  == 0 ||
-			seg_union->channel == 0){
+			seg_union->channel == 0	||
+			seg_union->num_in_dir == 0 ||
+			seg_union->num_in_m3u8 == 0){
 
 		printf("  Segment Invalid argument   ,please use"
 													" '%s  --help '  to find some information\n", argv[0]);
@@ -282,7 +297,7 @@ void create_first_ts_name(Segment_U * seg_union ,int mode_type){
 		sprintf(&(seg_union->ts_name[strlen(seg_union->ts_name)]) ,"%s-%d.ts" ,seg_union->ts_prfix_name ,++seg_union->segment_no);
 	}else if (mode_type == YY_LIVE){
 
-		sprintf(&(seg_union->ts_name[strlen(seg_union->ts_name)]) ,"%s-1.ts" ,seg_union->ts_prfix_name);
+		sprintf(&(seg_union->ts_name[strlen(seg_union->ts_name)]) ,"%s-%d.ts" ,seg_union->ts_prfix_name ,++seg_union->segment_no);
 	}
 
 
@@ -306,16 +321,26 @@ void record_segment_time(Output_Context *ptr_output_ctx){
 						av_q2d(ptr_output_ctx->video_stream->time_base) *
 										(ptr_output_ctx->pkt.pts )
 										- (double)ptr_output_ctx->ptr_format_ctx->start_time / AV_TIME_BASE;
-	//printf("ptr_output_ctx->prev_segment_time = %f \n" ,ptr_output_ctx->curr_segment_time);
+
+//	ptr_output_ctx->curr_segment_time =
+//						av_q2d(ptr_output_ctx->video_stream->time_base) *
+//						ptr_output_ctx->video_stream->pts.val
+//										- (double)ptr_output_ctx->ptr_format_ctx->start_time / AV_TIME_BASE;
+//	printf("ptr_output_ctx->prev_segment_time = %f \n" ,ptr_output_ctx->curr_segment_time);
 
 //	//time meet
 	if(ptr_output_ctx->curr_segment_time - ptr_output_ctx->prev_segment_time >= ptr_output_ctx->segment_duration){
-		printf("...meet time ...\n" );
+		printf("...meet time .. ,duration = %f ,start_time = %f .\n" ,ptr_output_ctx->curr_segment_time - ptr_output_ctx->prev_segment_time ,
+				(double)ptr_output_ctx->ptr_format_ctx->start_time / AV_TIME_BASE);
 		avio_flush(ptr_output_ctx->ptr_format_ctx->pb);
 		avio_close(ptr_output_ctx->ptr_format_ctx->pb);
 
 		printf("complete the %d.ts ,and write the m3u8 file..\n" ,ptr_output_ctx->segment_no);
 		write_m3u8_body( ptr_output_ctx ,ptr_output_ctx->curr_segment_time - ptr_output_ctx->prev_segment_time);
+
+
+
+
 		//concat ts file name
 		sprintf(&(ptr_output_ctx->ts_name[ptr_output_ctx->dir_name_len]) ,"%s-%d.ts" ,ptr_output_ctx->ts_prfix_name ,++ptr_output_ctx->segment_no);
 		if (avio_open(&(ptr_output_ctx->ptr_format_ctx->pb), ptr_output_ctx->ts_name, AVIO_FLAG_WRITE) < 0) {
@@ -347,20 +372,148 @@ void write_m3u8_header(Output_Context *ptr_output_ctx){
 }
 
 
+/*	round function	*/
+static int segmenter_duration_round(double src_num){
+
+	int tmp_num = (int)src_num;  //acquire the integer of the double data
+
+	double src_num1 = src_num + 0.5;
+	int target_num = (int)src_num1;
+	if(target_num > tmp_num){
+		return target_num;
+	}else{
+		return tmp_num;
+	}
+
+}
+
 void write_m3u8_body(Output_Context *ptr_output_ctx ,double segment_duration){
 
+	printf("=====segment_duration = %f \n" ,segment_duration);
 //	while(1);
-	//vod
-	if(ptr_output_ctx->mode_type  == YY_VOD){
+
+	if (ptr_output_ctx->mode_type == YY_LIVE) { //live
+
+		ptr_output_ctx->fp_m3u8 = fopen(ptr_output_ctx->full_m3u8_name, "wb+");
+
+		if (ptr_output_ctx->fp_m3u8 == NULL) {
+			fprintf(stderr, "Could not open m3u8 file %s...\n",
+					ptr_output_ctx->full_m3u8_name);
+			exit(OPEN_M3U8_FAIL);
+		}
+
+		int live_buf_index;
+
+		/*	header in m3u8	*/
+		if (ptr_output_ctx->segment_no <= ptr_output_ctx->num_in_m3u8) { //amite-1.ts
+
+			snprintf(ptr_output_ctx->live_write_buf, 1024,
+					"#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-ALLOW-CACHE:NO\n#EXT-X-TARGETDURATION:%d\n#EXT-X-MEDIA-SEQUENCE:1\n",
+					segmenter_duration_round(ptr_output_ctx->segment_duration));
+
+		} else {		// the first ts file have been removed
+			snprintf(ptr_output_ctx->live_write_buf, 1024,
+					"#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-ALLOW-CACHE:NO\n#EXT-X-TARGETDURATION:%d\n#EXT-X-MEDIA-SEQUENCE:%d\n",
+					segmenter_duration_round((int) ptr_output_ctx->segment_duration),
+					ptr_output_ctx->segment_no - ptr_output_ctx->num_in_m3u8
+							+ 1);
+		}
+		live_buf_index = strlen(ptr_output_ctx->live_write_buf);
+
+		int j;
+		/*	context in m3u8	*/
+		//situation one
+		if (ptr_output_ctx->segment_no <= ptr_output_ctx->num_in_m3u8) {
+
+			ptr_output_ctx->seg_duration_arr[ptr_output_ctx->segment_no] =
+					segment_duration;
+
+			for (j = 1; j <= ptr_output_ctx->segment_no; j++) {
+
+				if (bool_interger)
+					snprintf(ptr_output_ctx->live_write_buf + live_buf_index,
+							1024, "#EXTINF:%d,\n%s-%u.ts\n",
+							segmenter_duration_round(
+									ptr_output_ctx->seg_duration_arr[j]), ptr_output_ctx->ts_prfix_name,
+							j);
+				else
+					snprintf(ptr_output_ctx->live_write_buf + live_buf_index,
+							1024, "#EXTINF:%.02f,\n%s-%u.ts\n",
+							ptr_output_ctx->seg_duration_arr[j], ptr_output_ctx->ts_prfix_name,
+							j);
+
+				//update live_buf_index
+				live_buf_index = strlen(ptr_output_ctx->live_write_buf);
+			}
+
+			if (fwrite(ptr_output_ctx->live_write_buf,
+					strlen(ptr_output_ctx->live_write_buf), 1,
+					ptr_output_ctx->fp_m3u8) != 1) {
+				fprintf(stderr,
+						"Could not write to m3u8 index file, will not continue writing to index file\n");
+				fclose(ptr_output_ctx->fp_m3u8);
+				exit(WRITE_M3U8_FAIL);
+			}
+			printf("#chirs :success write the m3u8 file\n");
+		} else { ////situation second
+			/*先对数组中保存的ts的时间长度进行更新*/
+
+//===========================
+			for (j = 1; j < ptr_output_ctx->num_in_m3u8; j++) {
+
+				ptr_output_ctx->seg_duration_arr[j] =
+						ptr_output_ctx->seg_duration_arr[j + 1]; //元素前移
+
+			}
+			ptr_output_ctx->seg_duration_arr[ptr_output_ctx->num_in_m3u8] =
+					segment_duration; //处理数组最后一个成员
+
+			for (j = ptr_output_ctx->segment_no - ptr_output_ctx->num_in_m3u8
+					+ 1; j <= ptr_output_ctx->segment_no; j++) { //last_segment - sf_segmenter_handle_union->m3u8_ts_num + 1 从这开始 没错
+
+				if (bool_interger)
+					snprintf(ptr_output_ctx->live_write_buf + live_buf_index,
+							1024, "#EXTINF:%d,\n%s-%u.ts\n",
+							segmenter_duration_round(
+									ptr_output_ctx->seg_duration_arr[ptr_output_ctx->num_in_m3u8
+											- (ptr_output_ctx->segment_no - j)]), ptr_output_ctx->ts_prfix_name,
+							j);
+				else
+					snprintf(ptr_output_ctx->live_write_buf + live_buf_index,
+							1024, "#EXTINF:%.02f,\n%s-%u.ts\n",
+							ptr_output_ctx->seg_duration_arr[ptr_output_ctx->num_in_m3u8
+									- (ptr_output_ctx->segment_no - j)], ptr_output_ctx->ts_prfix_name, j);
+
+				//拼接
+				//update live_buf_index
+				live_buf_index = strlen(ptr_output_ctx->live_write_buf);
+			}
+///===============================
+			if (fwrite(ptr_output_ctx->live_write_buf,
+					strlen(ptr_output_ctx->live_write_buf), 1,
+					ptr_output_ctx->fp_m3u8) != 1) {
+				fprintf(stderr,
+						"Could not write to m3u8 index file, will not continue writing to index file\n");
+				fclose(ptr_output_ctx->fp_m3u8);
+				exit(WRITE_M3U8_FAIL);
+			}
+			printf("#chirs :success write the m3u8 file\n");
+		}
+
+		fclose(ptr_output_ctx->fp_m3u8);
+
+	} else if (ptr_output_ctx->mode_type == YY_VOD) { //vod
 
 		ptr_output_ctx->fp_m3u8 = fopen(ptr_output_ctx->full_m3u8_name, "ab+");
 
-		if(ptr_output_ctx->fp_m3u8 == NULL){
-			fprintf(stderr ,"Could not open m3u8 file %s...\n" ,ptr_output_ctx->full_m3u8_name);
+		if (ptr_output_ctx->fp_m3u8 == NULL) {
+			fprintf(stderr, "Could not open m3u8 file %s...\n",
+					ptr_output_ctx->full_m3u8_name);
 			exit(OPEN_M3U8_FAIL);
 		}
-		fprintf(ptr_output_ctx->fp_m3u8 ,"#EXTINF:%.02f,\n%s-%u.ts\n" ,segment_duration ,ptr_output_ctx->ts_prfix_name ,
-									ptr_output_ctx->segment_no);
+		fprintf(ptr_output_ctx->fp_m3u8, "#EXTINF:%.02f,\n%s-%u.ts\n",
+				segment_duration, ptr_output_ctx->ts_prfix_name,
+				ptr_output_ctx->segment_no);
 
 		fclose(ptr_output_ctx->fp_m3u8);
 	}
