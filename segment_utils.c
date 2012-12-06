@@ -338,10 +338,7 @@ void record_segment_time(Output_Context *ptr_output_ctx){
 		printf("complete the %d.ts ,and write the m3u8 file..\n" ,ptr_output_ctx->segment_no);
 		write_m3u8_body( ptr_output_ctx ,ptr_output_ctx->curr_segment_time - ptr_output_ctx->prev_segment_time);
 
-
-
-
-		//concat ts file name
+		//create next ts file name
 		sprintf(&(ptr_output_ctx->ts_name[ptr_output_ctx->dir_name_len]) ,"%s-%d.ts" ,ptr_output_ctx->ts_prfix_name ,++ptr_output_ctx->segment_no);
 		if (avio_open(&(ptr_output_ctx->ptr_format_ctx->pb), ptr_output_ctx->ts_name, AVIO_FLAG_WRITE) < 0) {
 			fprintf(stderr, "Could not open '%s'\n", ptr_output_ctx->ts_name);
@@ -501,6 +498,28 @@ void write_m3u8_body(Output_Context *ptr_output_ctx ,double segment_duration){
 		}
 
 		fclose(ptr_output_ctx->fp_m3u8);
+
+
+		//delete ts file generate before (I must save num_in_dir completed ts files)
+		if (ptr_output_ctx->segment_no
+				> ptr_output_ctx->num_in_dir) {
+
+			char remove_ts_filename[1024] = {0};
+			printf("ptr_output_ctx->ts_name = %s \n" ,ptr_output_ctx->ts_name);
+			snprintf(remove_ts_filename ,ptr_output_ctx->dir_name_len + 1 ,"%s" ,ptr_output_ctx->ts_name );
+			printf("ptr_output_ctx->dir_name_len = %d ,no = %d \n" ,ptr_output_ctx->dir_name_len ,ptr_output_ctx->segment_no);
+			printf("-------------remove_ts_filename = %s\n" ,remove_ts_filename);
+			snprintf(
+					&(remove_ts_filename[ptr_output_ctx->dir_name_len]),
+					1024,
+					"%s-%u.ts",
+					ptr_output_ctx->ts_prfix_name,
+					ptr_output_ctx->segment_no - ptr_output_ctx->num_in_dir);
+			printf("-------------remove_ts_filename = %s\n" ,remove_ts_filename);
+			//remove this file
+			unlink(remove_ts_filename);
+		}
+
 
 	} else if (ptr_output_ctx->mode_type == YY_VOD) { //vod
 

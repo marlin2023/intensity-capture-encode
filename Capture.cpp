@@ -15,6 +15,9 @@ extern "C"{
 #define   UINT64_C(value)__CONCAT(value,ULL)
 
 #endif
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <dirent.h>
 #include "output_handle.h"
 #include "segment_utils.h"
 #include "libswscale/swscale.h"
@@ -156,6 +159,14 @@ void * encode_yuv_data( void *void_del){
 		//unlock lock
 		pthread_mutex_unlock(&delegate->yuv_video_buf[0]->yuv_buf_mutex);
 
+
+		//judge exit or not
+		if(delegate->quit_mark == 1){
+			// do something
+
+			return NULL;
+		}
+
 	}
 
 	return NULL;
@@ -185,6 +196,13 @@ void * encode_yuv_data1( void *void_del){
 		//unlock lock
 		pthread_mutex_unlock(&delegate->yuv_video_buf[1]->yuv_buf_mutex);
 
+		//judge exit or not
+		if(delegate->quit_mark == 1){
+			// do something
+
+			return NULL;
+		}
+
 	}
 
 	return NULL;
@@ -213,10 +231,71 @@ void * encode_yuv_data2( void *void_del){
 		//unlock lock
 		pthread_mutex_unlock(&delegate->yuv_video_buf[2]->yuv_buf_mutex);
 
+		//judge exit or not
+		if(delegate->quit_mark == 1){
+			// do something
+
+			return NULL;
+		}
+
 	}
 
 	return NULL;
 }
+
+/*
+ * listen keyboard function
+ * */
+void * key_listen(void *handle) {
+
+	printf("#chris:in monitor pthread\n");
+
+	DeckLinkCaptureDelegate 	*delegate  = (DeckLinkCaptureDelegate 	*)handle;
+	fd_set rdfds;
+	struct timeval tv;	 	//the duration time for select function listen
+
+	FD_ZERO(&rdfds);
+	FD_SET(0, &rdfds);
+
+	tv.tv_sec = 1;
+	tv.tv_usec = 0; /* set tv value */
+
+	char str_consle_input1[12] = {0};
+
+	printf("Press [q] to stop\n");
+
+	while (1) {
+
+		int ret = select(1, &rdfds, NULL, NULL, /*&tv*/&tv); /* 注意是最大值还要加1 */
+		if (ret < 0) {
+			printf(" error\n");/* 出错 */
+		} else if (ret == 0) {
+			//over time
+		} else { //receive key value from keyboard
+
+			fgets(str_consle_input1, 12, stdin); //stdin
+
+			if (strcmp(str_consle_input1, "q\n") == 0) { //notice ,must end with the '\n'
+				printf("hahah -->q \n");
+				delegate->quit_mark = 1;
+				exit(0); //here ,use exit ,and force kill current thread...
+			}
+
+
+			memset(str_consle_input1, 0, 12);
+		}
+
+		//rest fd set
+		FD_SET(0, &rdfds);
+		//reset duration for select function
+		tv.tv_sec = 1;
+		tv.tv_usec = 0;
+	}
+	printf("exit while loop\n");
+
+	return NULL;
+}
+
 
 /*
  * callback thread in charge of to capture the video and audio data ,and then put they into pipe;
@@ -377,7 +456,9 @@ int main(int argc, char *argv[])
 	//===========================
 
 
-
+	//new a thread to listen the user input information
+	pthread_t pid_key_listion;
+	pthread_create(&pid_key_listion , NULL ,key_listen ,delegate);
 	//new a thread to encode video data
 	pthread_t pid_video_encode;
 	pthread_create(&pid_video_encode , NULL ,encode_yuv_data ,delegate);
@@ -434,6 +515,8 @@ int main(int argc, char *argv[])
     }
 
     pthread_join(pid_video_encode ,NULL);
+    pthread_join(pid_key_listion ,NULL);
+    printf("program over......\n");
 	// Block main thread until signal occurs
 
 bail:
