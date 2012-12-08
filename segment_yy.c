@@ -40,6 +40,7 @@ int init_seg_union(Segment_U * segment_union ,int prog_no) {   //传递是指针
 		exit(MEMORY_MALLOC_FAIL);
 	}
 
+	/*following ,start to set  Output_Context information */
 	//user can control input ,must before init_output function
 	seg_union->output_ctx->frame_rate				=		 seg_union->frame_rate;						 //frame rate
 	seg_union->output_ctx->width					=		 seg_union->width;							//video width
@@ -48,10 +49,18 @@ int init_seg_union(Segment_U * segment_union ,int prog_no) {   //传递是指针
 	seg_union->output_ctx->audio_rate				=		 seg_union->audio_rate;						//audio bitrate
 	seg_union->output_ctx->sample					=		 seg_union->sample;							//audio sample
 	seg_union->output_ctx->channel					=		 seg_union->channel;						//audio channels
+	//add ts num_remain in m3u8 and dir
+	seg_union->output_ctx->num_in_dir				= seg_union->num_in_dir;
+	seg_union->output_ctx->num_in_m3u8 				= seg_union->num_in_m3u8;
 
-	seg_union->output_ctx->frame_count = 0;
-	//initialize the output context
+	printf("num_in_m3u8 = %d ,num_in_dir = %d \n\n" ,seg_union->output_ctx->num_in_m3u8 ,seg_union->output_ctx->num_in_dir);
+
+	seg_union->output_ctx->frame_count 				= 0;
+
+
+	/*	initialize the output context */
 	init_output(seg_union->output_ctx ,seg_union->ts_name );  //add stream information in this function
+
 	//open video and audio ,set video_out_buf and audio_out_buf
 	open_stream_codec(seg_union->output_ctx ,prog_no);
 	printf("--------------->after transcode init function ..\n");
@@ -65,10 +74,6 @@ int init_seg_union(Segment_U * segment_union ,int prog_no) {   //传递是指针
 	seg_union->output_ctx->ts_name 					=		 seg_union->ts_name;
 	seg_union->output_ctx->full_m3u8_name			=		 seg_union->full_m3u8_name;
 	seg_union->output_ctx->mode_type				=		 seg_union->mode_type;
-
-	//add ts num_remain in m3u8 and dir
-	seg_union->output_ctx->num_in_dir = seg_union->num_in_dir;
-	seg_union->output_ctx->num_in_m3u8 = seg_union->num_in_m3u8;
 
 	//add
 	seg_union->picture_capture = avcodec_alloc_frame();

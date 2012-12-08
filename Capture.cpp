@@ -78,7 +78,7 @@ HRESULT DeckLinkCaptureDelegate::VideoInputFrameArrived(IDeckLinkVideoInputFrame
 			videoFrame->GetBytes(&frameBytes);
 
 			int i ;
-			for(i = 0; i <this->prog_num ; i ++){
+			for(i = 0; i < this->prog_num ; i ++){
 
 				if( pthread_mutex_trylock(&this->yuv_video_buf[i]->yuv_buf_mutex) == 0){ //lock sucess
 
@@ -407,6 +407,7 @@ int main(int argc, char *argv[])
 	//==============================================
 	/*	parse the option */
 	delegate->prog_num = parse_option_argument(delegate->seg_union ,argc ,argv);
+	//after parse_option_argument function ,input argument have been assignment
 	printf("prog_num = %d ,width = %d ,height = %d  \n" ,delegate->prog_num ,delegate->width_capture  ,delegate->height_caputre);
 
 	av_register_all();
@@ -445,7 +446,7 @@ int main(int argc, char *argv[])
 
 	}
 
-	deckLinkInput->SetCallback(delegate);
+	deckLinkInput->SetCallback(delegate);	// set deckLinkInput callback function
 	printf("width = %d ,height = %d \n" ,delegate->seg_union[0]->width ,delegate->seg_union[0]->height);
 //	printf("width = %d ,height = %d \n" ,delegate->seg_union[1]->width ,delegate->seg_union[1]->height);
 //	printf("width = %d ,height = %d \n" ,delegate->seg_union[2]->width ,delegate->seg_union[2]->height);

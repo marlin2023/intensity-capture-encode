@@ -250,17 +250,45 @@ int parse_option_argument(Segment_U ** seg_union_ptr ,int argc, char *argv[]) {
 
 void create_directory(char *storage_dir) {
 
-	DIR *dir = opendir(storage_dir);
-	if (dir == NULL) {
+//	DIR *dir = opendir(storage_dir);
+//	if (dir == NULL) {
+//
+//		int tmp_ret = mkdir(storage_dir, 0777);
+//		if (tmp_ret != 0) {
+//			printf("mkdir  directory failed ,FILE :%s LINE:%d\n" ,__FILE__ ,__LINE__);
+//			exit(CREAT_M3U8_DIR_FAIL);
+//		}
+//	} else {
+//		closedir(dir);
+//	}
 
-		int tmp_ret = mkdir(storage_dir, 0777);
-		if (tmp_ret != 0) {
-			printf("mkdir  directory failed\n");
-			exit(CREAT_M3U8_DIR_FAIL);
-		}
-	} else {
-		closedir(dir);
+	char *temp = strdup(storage_dir);
+	char *pos = temp;
+
+    /* remove the start './' or '/' */
+	if (strncmp(temp, "/", 1) == 0) {
+		pos += 1;
+	} else if (strncmp(temp, "./", 2) == 0) {
+		pos += 2;
 	}
+
+	/* create directory  cyclic*/
+	for (; *pos != '\0'; ++pos) {
+		if (*pos == '/') {
+			*pos = '\0';
+			mkdir(temp, 0777);
+			printf("for %s\n", temp);
+			*pos = '/';
+		}
+	}
+
+	  /* if the last directory not end with '/' ,still create a directory*/
+	if (*(pos - 1) != '/') {
+		printf("if %s\n", temp);
+		mkdir(temp, 0777);
+	}
+	free(temp);
+
 
 }
 
@@ -332,6 +360,8 @@ void record_segment_time(Output_Context *ptr_output_ctx){
 	if(ptr_output_ctx->curr_segment_time - ptr_output_ctx->prev_segment_time >= ptr_output_ctx->segment_duration){
 		printf("...meet time .. ,duration = %f ,start_time = %f .\n" ,ptr_output_ctx->curr_segment_time - ptr_output_ctx->prev_segment_time ,
 				(double)ptr_output_ctx->ptr_format_ctx->start_time / AV_TIME_BASE);
+//		//get lock
+//		pthread_mutex_lock(&ptr_output_ctx->output_mutex);
 		avio_flush(ptr_output_ctx->ptr_format_ctx->pb);
 		avio_close(ptr_output_ctx->ptr_format_ctx->pb);
 
@@ -344,7 +374,8 @@ void record_segment_time(Output_Context *ptr_output_ctx){
 			fprintf(stderr, "Could not open '%s'\n", ptr_output_ctx->ts_name);
 			exit(OPEN_MUX_FILE_FAIL);
 		}
-
+//		//unlock
+//		pthread_mutex_unlock(&ptr_output_ctx->output_mutex);
 		ptr_output_ctx->prev_segment_time = ptr_output_ctx->curr_segment_time;   //place here
 	}
 

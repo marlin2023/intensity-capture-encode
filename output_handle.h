@@ -82,6 +82,10 @@ typedef struct {
 	char *live_write_buf;				//write the m3u8 for the live situation
 	double *seg_duration_arr;			//use to storage the ts files length ,is array
 
+
+	// use for mutex to write audio packet and video packet
+	pthread_mutex_t		output_mutex;
+
 }Output_Context;
 
 /*

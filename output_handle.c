@@ -251,12 +251,16 @@ int init_output(Output_Context *ptr_output_ctx, char* output_file ){
 	}
 	memset(ptr_output_ctx->live_write_buf ,0  ,2048);
 
+	printf("ptr_output_ctx->num_in_m3u8 = %d \n" ,ptr_output_ctx->num_in_m3u8);
 	ptr_output_ctx->seg_duration_arr = malloc(sizeof(double) *  ( ptr_output_ctx->num_in_m3u8 + 1) );  	//use to storage the every ts file length in the m3u8 ,the array[0] reserved
 	if(ptr_output_ctx->seg_duration_arr == NULL){
-		printf("seg_duration_arr malloc failed ..\n");
+		printf("seg_duration_arr malloc failed .. ,%s ,line %d \n" ,__FILE__ ,__LINE__);
 		exit(MEMORY_MALLOC_FAIL);
 	}
 
+
+	//add
+	pthread_mutex_init(&ptr_output_ctx->output_mutex ,NULL);
 
 	return 0;
 }
@@ -285,7 +289,7 @@ static void open_video (Output_Context *ptr_output_ctx ,AVStream * st ,int prog_
 		av_dict_set(&opts, "tune", "film", 0);
 		av_dict_set(&opts, "preset", "slower", 0);
 		//connect the string content x264opts
-		av_dict_set(&opts, "x264opts", "crf=28:subme=10:trellis=2:bframes=3:vbv-maxrate=500:vbv-bufsize=1000:force-cfr=1" ,0);
+		av_dict_set(&opts, "x264opts", "bitrate=500:subme=10:trellis=2:bframes=3:vbv-maxrate=500:vbv-bufsize=1000:force-cfr=1" ,0);
 
 	}else if(prog_no == 1){
 		av_dict_set(&opts, "profile", "high", 0);
@@ -293,7 +297,7 @@ static void open_video (Output_Context *ptr_output_ctx ,AVStream * st ,int prog_
 		av_dict_set(&opts, "tune", "film", 0);
 		av_dict_set(&opts, "preset", "slower", 0);
 		//connect the string content x264opts
-		av_dict_set(&opts, "x264opts", "crf=22:subme=10:trellis=2:bframes=3:vbv-maxrate=1000:vbv-bufsize=2000:force-cfr=1" ,0);
+		av_dict_set(&opts, "x264opts", "bitrate=1000:subme=10:trellis=2:bframes=3:vbv-maxrate=1000:vbv-bufsize=2000:force-cfr=1" ,0);
 
 	}else if(prog_no == 2){
 		av_dict_set(&opts, "profile", "high", 0);
@@ -301,7 +305,8 @@ static void open_video (Output_Context *ptr_output_ctx ,AVStream * st ,int prog_
 		av_dict_set(&opts, "tune", "film", 0);
 		av_dict_set(&opts, "preset", "slower", 0);
 		//connect the string content x264opts
-		av_dict_set(&opts, "x264opts", "crf=20:subme=10:trellis=2:bframes=3:vbv-maxrate=2000:vbv-bufsize=4000:force-cfr=1" ,0);
+		av_dict_set(&opts, "x264opts", "bitrate=2000:subme=10:trellis=2:bframes=3:vbv-maxrate=2000:vbv-bufsize=4000:"
+				"force-cfr=1:nal-hrd=vbr" ,0);
 
 	}
 
@@ -473,19 +478,22 @@ void encode_video_frame(Output_Context *ptr_output_ctx, AVFrame *pict,
 			if (ptr_output_ctx->video_stream->codec->coded_frame->key_frame)
 				ptr_output_ctx->pkt.flags |= AV_PKT_FLAG_KEY;
 
+			//get lock
+			pthread_mutex_lock(&ptr_output_ctx->output_mutex);
 #if 1
 			//judge if key frame or not
 			if(ptr_output_ctx->pkt.flags && AV_PKT_FLAG_KEY){
+
 				//init segment_time
 				record_segment_time(ptr_output_ctx);
 
 			}
 #endif
 
-//			printf(" stream_index = %d \n" ,ptr_output_ctx->pkt.stream_index);
-			av_write_frame(ptr_output_ctx->ptr_format_ctx, &ptr_output_ctx->pkt);
-
+//			av_write_frame(ptr_output_ctx->ptr_format_ctx, &ptr_output_ctx->pkt);
+			av_interleaved_write_frame(ptr_output_ctx->ptr_format_ctx, &ptr_output_ctx->pkt);
 			av_free_packet(&ptr_output_ctx->pkt);
+			pthread_mutex_unlock(&ptr_output_ctx->output_mutex);
 		}
 
 	}
@@ -532,8 +540,12 @@ void encode_audio_frame(Output_Context *ptr_output_ctx1[] , uint8_t *buf ,int bu
 
 //	av_write_frame(ptr_output_ctx->ptr_format_ctx, &pkt);
 	int i = 0;
+	//printf("prog_num = %d , pkt.stream = %d \n" ,prog_num ,pkt.stream_index);
 	for(i = 0 ;i < prog_num ; i ++){
-		av_write_frame(ptr_output_ctx1[i]->ptr_format_ctx, &pkt);
+		pthread_mutex_lock(&(ptr_output_ctx1[i]->output_mutex));
+//		av_write_frame(ptr_output_ctx1[i]->ptr_format_ctx, &pkt);
+		av_interleaved_write_frame(ptr_output_ctx1[i]->ptr_format_ctx, &pkt);
+		pthread_mutex_unlock(&(ptr_output_ctx1[i]->output_mutex));
 	}
 
 	av_free(frame);
