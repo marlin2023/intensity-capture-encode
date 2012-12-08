@@ -48,6 +48,8 @@
 
 
 
-
+#define		OPEN_LOG_FILE_FAIL				0x61
+#define		READ_LOG_FILE_FAIL				0x62
+#define 	WRITE_LOG_FILE_FAIL				0x63
 
 #endif

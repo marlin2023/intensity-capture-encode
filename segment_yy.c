@@ -19,6 +19,12 @@ int init_seg_union(Segment_U * segment_union ,int prog_no) {   //传递是指针
 
 
 	Segment_U * seg_union =segment_union;
+	//malloc Output_context
+	if( (seg_union->output_ctx = malloc (sizeof(Output_Context))) == NULL){
+
+		printf("ptr_output_ctx malloc failed .\n");
+		exit(MEMORY_MALLOC_FAIL);
+	}
 
 	seg_union->segment_no = 0;
 
@@ -27,18 +33,6 @@ int init_seg_union(Segment_U * segment_union ,int prog_no) {   //传递是指针
 
 	/* create m3u8 file */
 	create_m3u8_name(seg_union);
-	/*	splice some information	*/
-	create_first_ts_name(seg_union ,seg_union->mode_type);
-
-
-	printf("--------------->before transcode init function  ,seg_union->ts_name = %s..\n" ,seg_union->ts_name);
-	printf("seg_union->full_m3u8_name = %s \n" ,seg_union->full_m3u8_name);
-
-	if( (seg_union->output_ctx = malloc (sizeof(Output_Context))) == NULL){
-
-		printf("ptr_output_ctx malloc failed .\n");
-		exit(MEMORY_MALLOC_FAIL);
-	}
 
 	/*following ,start to set  Output_Context information */
 	//user can control input ,must before init_output function
@@ -56,6 +50,38 @@ int init_seg_union(Segment_U * segment_union ,int prog_no) {   //传递是指针
 	printf("num_in_m3u8 = %d ,num_in_dir = %d \n\n" ,seg_union->output_ctx->num_in_m3u8 ,seg_union->output_ctx->num_in_dir);
 
 	seg_union->output_ctx->frame_count 				= 0;
+
+//======================================live mode type
+	if(seg_union->mode_type == YY_LIVE){	// live mode
+
+		/*	live something	*/
+		//malloc live_buffer for m3u8 buffer  //the content of m3u8
+		seg_union->output_ctx->live_write_buf = malloc(sizeof(char) * 1024 * 100);
+		if (!seg_union->output_ctx->live_write_buf) {
+			fprintf(stderr, "Could not allocate write buffer for live_write_buf\n");
+			exit(ALLOCATE_M3U8_WRITE_BUFFER_LIVE);
+		}
+		memset(seg_union->output_ctx->live_write_buf ,0  ,1024*100);
+
+		printf("ptr_output_ctx->num_in_m3u8 = %d \n" ,seg_union->output_ctx->num_in_m3u8);
+		seg_union->output_ctx->seg_duration_arr = malloc(sizeof(double) *  ( seg_union->output_ctx->num_in_m3u8 + 1) );  	//use to storage the every ts file length in the m3u8 ,the array[0] reserved
+		if(seg_union->output_ctx->seg_duration_arr == NULL){
+			printf("seg_duration_arr malloc failed .. ,%s ,line %d \n" ,__FILE__ ,__LINE__);
+			exit(MEMORY_MALLOC_FAIL);
+		}
+
+		/*	judge for the log.info 	*/
+		int ret =find_log_file(seg_union);
+		if(ret){//find the log file ,and recover the scene ,recover the segment_no use to create the ts name
+			recover_from_log(seg_union);
+			printf("......after recover from the log file ...\n\n\n");
+		}
+	}
+//========================================
+	/*	splice some information	*/
+	create_first_ts_name(seg_union ,seg_union->mode_type);
+	printf("--------------->before transcode init function  ,seg_union->ts_name = %s..\n" ,seg_union->ts_name);
+	printf("seg_union->full_m3u8_name = %s \n" ,seg_union->full_m3u8_name);
 
 
 	/*	initialize the output context */
@@ -78,6 +104,9 @@ int init_seg_union(Segment_U * segment_union ,int prog_no) {   //传递是指针
 	//add
 	seg_union->picture_capture = avcodec_alloc_frame();
 	seg_union->picture_capture_no = 0;
+
+
+
 	return 0;
 }
 

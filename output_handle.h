@@ -7,6 +7,8 @@
 #include "libavutil/fifo.h"
 #include "input_handle.h"
 
+#define 			LOG_FILE_NAME		"log.info"
+
 //output file information
 typedef struct {
 	//output file
@@ -86,6 +88,8 @@ typedef struct {
 	// use for mutex to write audio packet and video packet
 	pthread_mutex_t		output_mutex;
 
+	//store log.err name
+	char log_name[1024];
 }Output_Context;
 
 /*

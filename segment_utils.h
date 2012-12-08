@@ -54,6 +54,19 @@ void create_m3u8_name(Segment_U * seg_union );
 
 void record_segment_time(Output_Context *ptr_output_ctx);
 
+//=================================
+/*
+ * return value: 1 find the log file ,if 0 indicate do not find the log file
+ *
+ * */
+int find_log_file(Segment_U * seg_union);
+
+void recover_from_log(Segment_U * seg_union);
+
+
+void update_log_file(Output_Context *ptr_output_ctx);
+
+//-=======================
 /*
  * write m3u8 file functions
  * */

@@ -242,23 +242,6 @@ int init_output(Output_Context *ptr_output_ctx, char* output_file ){
 	}
 	av_log(NULL, AV_LOG_WARNING ,"--av_fifo_size(ost->fifo) = %d \n" ,av_fifo_size(ptr_output_ctx->fifo));  //输出是0？！
 
-	/*	live something	*/
-	//malloc live_buffer for m3u8 buffer
-	ptr_output_ctx->live_write_buf = malloc(sizeof(char) * 1024 * 100);
-	if (!ptr_output_ctx->live_write_buf) {
-		fprintf(stderr, "Could not allocate write buffer for live_write_buf\n");
-		exit(ALLOCATE_M3U8_WRITE_BUFFER_LIVE);
-	}
-	memset(ptr_output_ctx->live_write_buf ,0  ,2048);
-
-	printf("ptr_output_ctx->num_in_m3u8 = %d \n" ,ptr_output_ctx->num_in_m3u8);
-	ptr_output_ctx->seg_duration_arr = malloc(sizeof(double) *  ( ptr_output_ctx->num_in_m3u8 + 1) );  	//use to storage the every ts file length in the m3u8 ,the array[0] reserved
-	if(ptr_output_ctx->seg_duration_arr == NULL){
-		printf("seg_duration_arr malloc failed .. ,%s ,line %d \n" ,__FILE__ ,__LINE__);
-		exit(MEMORY_MALLOC_FAIL);
-	}
-
-
 	//add
 	pthread_mutex_init(&ptr_output_ctx->output_mutex ,NULL);
 
@@ -306,7 +289,7 @@ static void open_video (Output_Context *ptr_output_ctx ,AVStream * st ,int prog_
 		av_dict_set(&opts, "preset", "slower", 0);
 		//connect the string content x264opts
 		av_dict_set(&opts, "x264opts", "bitrate=2000:subme=10:trellis=2:bframes=3:vbv-maxrate=2000:vbv-bufsize=4000:"
-				"force-cfr=1:nal-hrd=vbr" ,0);
+				"force-cfr=1" ,0); //:nal-hrd=vbr
 
 	}
 

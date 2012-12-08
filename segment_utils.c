@@ -322,13 +322,132 @@ void create_first_ts_name(Segment_U * seg_union ,int mode_type){
 		sprintf(&(seg_union->ts_name[strlen(seg_union->ts_name)]) ,"%s.ts" ,seg_union->ts_prfix_name);
 	}else if(mode_type == YY_VOD){
 
-		sprintf(&(seg_union->ts_name[strlen(seg_union->ts_name)]) ,"%s-%d.ts" ,seg_union->ts_prfix_name ,++seg_union->segment_no);
+		sprintf(&(seg_union->ts_name[strlen(seg_union->ts_name)]) ,"%s-%d.ts" ,seg_union->ts_prfix_name ,
+				/*++seg_union->segment_no*/++seg_union->output_ctx->segment_no);
 	}else if (mode_type == YY_LIVE){
 
-		sprintf(&(seg_union->ts_name[strlen(seg_union->ts_name)]) ,"%s-%d.ts" ,seg_union->ts_prfix_name ,++seg_union->segment_no);
+		sprintf(&(seg_union->ts_name[strlen(seg_union->ts_name)]) ,"%s-%d.ts" ,seg_union->ts_prfix_name ,
+				/*++seg_union->segment_no*/++seg_union->output_ctx->segment_no);
 	}
 
 
+}
+
+int find_log_file(Segment_U * seg_union){
+
+	if( seg_union->storage_dir[strlen(seg_union->storage_dir) -1 ] == '/'){ //storage end with '/'
+
+		sprintf(seg_union->output_ctx->log_name ,"%s%s" ,seg_union->storage_dir ,LOG_FILE_NAME);
+	}else{
+		sprintf(seg_union->output_ctx->log_name ,"%s/%s" ,seg_union->storage_dir ,LOG_FILE_NAME);
+	}
+
+	//access the log file
+	if(access (seg_union->output_ctx->log_name ,F_OK|R_OK|W_OK) == 0)
+		return 1;
+	else
+		return 0;
+
+}
+
+void recover_from_log(Segment_U * seg_union){
+
+	char tmp_buf[32];
+	FILE *ptr_log = NULL;
+	ptr_log = fopen(seg_union->output_ctx->log_name ,"r");  //open in only read mode
+	if(ptr_log == NULL){
+		printf("open log_file failed ,FILE:%s ,LINE:%d\n" ,__FILE__ ,__LINE__);
+		exit(OPEN_LOG_FILE_FAIL);
+	}
+
+	//first ,judge the length of the file log.err
+	fseek(ptr_log, 0, SEEK_END);
+	int lengthOfFile = ftell(ptr_log);
+	if (lengthOfFile == 0) {
+		//printf("length is 0 \n");
+		fclose(ptr_log);
+		return ;
+	}
+
+	fseek(ptr_log, 0, SEEK_SET);
+
+	/*
+	 * read log file
+	 * */
+	if (fgets(tmp_buf, 32, ptr_log) == NULL) { //fgets read a whole line data
+		printf("read log_file failed\n");
+		exit(READ_LOG_FILE_FAIL);
+	}
+
+	seg_union->segment_no =
+	seg_union->output_ctx->segment_no = atoi(tmp_buf);	//last work ,the max segment index
+
+	int i;
+
+	if(seg_union->output_ctx->segment_no > seg_union->output_ctx->num_in_m3u8){
+		for(i = 0 ;i <=  seg_union->output_ctx->num_in_m3u8 ;i ++){
+			if(fgets(tmp_buf ,32 ,ptr_log) == NULL){  //fgets read a whole line data
+				printf("read log_file failed\n");
+				exit(READ_LOG_FILE_FAIL);
+			}
+
+			seg_union->output_ctx->seg_duration_arr[i] = atof(tmp_buf);
+		}
+	}else{
+
+		for(i = 0 ;i <= seg_union->output_ctx->segment_no  ;i ++){
+			if(fgets(tmp_buf ,32 ,ptr_log) == NULL){  //fgets read a whole line data
+				printf("read log_file failed\n");
+				exit(READ_LOG_FILE_FAIL);
+			}
+
+			seg_union->output_ctx->seg_duration_arr[i] = atof(tmp_buf);
+		}
+	}
+
+	fclose(ptr_log);
+}
+
+void update_log_file(Output_Context *ptr_output_ctx){
+
+	char tmp_buf[1024];
+	int  buf_index;
+	FILE *ptr_log = NULL;
+
+	ptr_log = fopen(ptr_output_ctx->log_name ,"w");
+	if(ptr_log == NULL){
+		printf("open log_file failed ,FILE:%s ,LINE:%d\n" ,__FILE__ ,__LINE__);
+		exit(OPEN_LOG_FILE_FAIL);
+	}
+
+	//write the segment no
+	snprintf(tmp_buf, 1024, "%u\n", ptr_output_ctx->segment_no);
+	buf_index = strlen(tmp_buf);
+
+	//write the target segment duration
+	snprintf(tmp_buf + buf_index, 32, "%f\n", ptr_output_ctx->segment_duration);
+	buf_index = strlen(tmp_buf);
+
+	//write the segment time
+	int i ;
+	if(ptr_output_ctx->segment_no > ptr_output_ctx->num_in_m3u8){
+		for(i = 1; i <= ptr_output_ctx->num_in_m3u8 ; i++ ){
+			snprintf(tmp_buf + buf_index, 32, "%f\n", ptr_output_ctx->seg_duration_arr[i]);
+			buf_index = strlen(tmp_buf);
+		}
+	}else{
+		for(i = 1; i <= ptr_output_ctx->segment_no ; i++){
+			snprintf(tmp_buf + buf_index, 32, "%f\n", ptr_output_ctx->seg_duration_arr[i]);
+			buf_index = strlen(tmp_buf);
+		}
+	}
+	if (fwrite(tmp_buf, strlen(tmp_buf), 1, ptr_log) != 1) {
+		fprintf(stderr, "Could not write to m3u8 index file, will not continue writing to index file\n");
+		fclose(ptr_log);
+		exit(WRITE_LOG_FILE_FAIL);
+	}
+
+	fclose(ptr_log);
 }
 
 
@@ -367,7 +486,6 @@ void record_segment_time(Output_Context *ptr_output_ctx){
 
 		printf("complete the %d.ts ,and write the m3u8 file..\n" ,ptr_output_ctx->segment_no);
 		write_m3u8_body( ptr_output_ctx ,ptr_output_ctx->curr_segment_time - ptr_output_ctx->prev_segment_time);
-
 		//create next ts file name
 		sprintf(&(ptr_output_ctx->ts_name[ptr_output_ctx->dir_name_len]) ,"%s-%d.ts" ,ptr_output_ctx->ts_prfix_name ,++ptr_output_ctx->segment_no);
 		if (avio_open(&(ptr_output_ctx->ptr_format_ctx->pb), ptr_output_ctx->ts_name, AVIO_FLAG_WRITE) < 0) {
@@ -550,6 +668,12 @@ void write_m3u8_body(Output_Context *ptr_output_ctx ,double segment_duration){
 			//remove this file
 			unlink(remove_ts_filename);
 		}
+
+		/*
+		 * update the log file
+		 *
+		 * */
+		update_log_file(ptr_output_ctx);
 
 
 	} else if (ptr_output_ctx->mode_type == YY_VOD) { //vod
