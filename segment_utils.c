@@ -250,18 +250,6 @@ int parse_option_argument(Segment_U ** seg_union_ptr ,int argc, char *argv[]) {
 
 void create_directory(char *storage_dir) {
 
-//	DIR *dir = opendir(storage_dir);
-//	if (dir == NULL) {
-//
-//		int tmp_ret = mkdir(storage_dir, 0777);
-//		if (tmp_ret != 0) {
-//			printf("mkdir  directory failed ,FILE :%s LINE:%d\n" ,__FILE__ ,__LINE__);
-//			exit(CREAT_M3U8_DIR_FAIL);
-//		}
-//	} else {
-//		closedir(dir);
-//	}
-
 	char *temp = strdup(storage_dir);
 	char *pos = temp;
 
@@ -315,7 +303,7 @@ void create_first_ts_name(Segment_U * seg_union ,int mode_type){
 		sprintf(seg_union->ts_name ,"%s/" ,seg_union->storage_dir);
 	}
 
-	seg_union->dir_name_len = strlen(seg_union->ts_name);
+	seg_union->dir_name_len = strlen(seg_union->ts_name);			//alter the dir_name_len
 	//structure  the first ts name
 	if(mode_type == YY_TRANSCODE){
 

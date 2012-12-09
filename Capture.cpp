@@ -278,7 +278,9 @@ void * key_listen(void *handle) {
 			if (strcmp(str_consle_input1, "q\n") == 0) { //notice ,must end with the '\n'
 				printf("hahah -->q \n");
 				delegate->quit_mark = 1;
-				exit(0); //here ,use exit ,and force kill current thread...
+//				exit(0); //here ,use exit ,and force kill current thread...
+				pthread_exit(0);
+				printf("after pthread_exit() in the listen key board thread \n");
 			}
 
 
@@ -517,6 +519,14 @@ int main(int argc, char *argv[])
 
     pthread_join(pid_video_encode ,NULL);
     pthread_join(pid_key_listion ,NULL);
+	if(delegate->prog_num == 2){  //two different bitrate
+	    pthread_join(pid_video_encode1 ,NULL);
+	}else if(delegate->prog_num == 3){
+	    pthread_join(pid_video_encode1 ,NULL);
+	    pthread_join(pid_video_encode2 ,NULL);
+	}
+
+
     printf("program over......\n");
 	// Block main thread until signal occurs
 

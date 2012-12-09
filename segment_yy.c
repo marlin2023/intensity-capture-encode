@@ -19,23 +19,27 @@ int init_seg_union(Segment_U * segment_union ,int prog_no) {   //传递是指针
 
 
 	Segment_U * seg_union =segment_union;
+
+	seg_union->segment_no = 0;
+	seg_union->picture_capture = avcodec_alloc_frame();
+	seg_union->picture_capture_no = 0;
+
+	/*	-----------base seg_union do something---------------	*/
+	//	create directory
+	create_directory(seg_union->storage_dir);
+
+	// create m3u8 file
+	create_m3u8_name(seg_union);
+	printf("seg_union->full_m3u8_name = %s \n" ,seg_union->full_m3u8_name);
+
+	/*----------following ,start to set  Output_Context information----- */
 	//malloc Output_context
 	if( (seg_union->output_ctx = malloc (sizeof(Output_Context))) == NULL){
 
 		printf("ptr_output_ctx malloc failed .\n");
 		exit(MEMORY_MALLOC_FAIL);
 	}
-
-	seg_union->segment_no = 0;
-
-	/*	create directory	*/
-	create_directory(seg_union->storage_dir);
-
-	/* create m3u8 file */
-	create_m3u8_name(seg_union);
-
-	/*following ,start to set  Output_Context information */
-	//user can control input ,must before init_output function
+	//segment element in output context
 	seg_union->output_ctx->frame_rate				=		 seg_union->frame_rate;						 //frame rate
 	seg_union->output_ctx->width					=		 seg_union->width;							//video width
 	seg_union->output_ctx->height					=		 seg_union->height;							//video height
@@ -43,15 +47,19 @@ int init_seg_union(Segment_U * segment_union ,int prog_no) {   //传递是指针
 	seg_union->output_ctx->audio_rate				=		 seg_union->audio_rate;						//audio bitrate
 	seg_union->output_ctx->sample					=		 seg_union->sample;							//audio sample
 	seg_union->output_ctx->channel					=		 seg_union->channel;						//audio channels
-	//add ts num_remain in m3u8 and dir
 	seg_union->output_ctx->num_in_dir				= seg_union->num_in_dir;
 	seg_union->output_ctx->num_in_m3u8 				= seg_union->num_in_m3u8;
-
+	seg_union->output_ctx->segment_duration 		=		 seg_union->segment_duration;
+	seg_union->output_ctx->ts_prfix_name 			= 		 seg_union->ts_prfix_name;
+	seg_union->output_ctx->mode_type				=		 seg_union->mode_type;
+	//
+	seg_union->output_ctx->segment_no				= 		 seg_union->segment_no;
+	seg_union->output_ctx->full_m3u8_name			=		 seg_union->full_m3u8_name;
+	//
+	seg_union->output_ctx->frame_count 				= 0;			//this frame_count be used to generate video pts.
 	printf("num_in_m3u8 = %d ,num_in_dir = %d \n\n" ,seg_union->output_ctx->num_in_m3u8 ,seg_union->output_ctx->num_in_dir);
 
-	seg_union->output_ctx->frame_count 				= 0;
-
-//======================================live mode type
+	/*-----------	following ,only do in the mode_type yy_live	--------------*/
 	if(seg_union->mode_type == YY_LIVE){	// live mode
 
 		/*	live something	*/
@@ -77,35 +85,20 @@ int init_seg_union(Segment_U * segment_union ,int prog_no) {   //传递是指针
 			printf("......after recover from the log file ...\n\n\n");
 		}
 	}
-//========================================
-	/*	splice some information	*/
+
+	//splice the first ts name
 	create_first_ts_name(seg_union ,seg_union->mode_type);
+	//the followint ,dir_name_len and ts_name set must be set after the function create_first_ts_name!!!!
+	seg_union->output_ctx->dir_name_len 		    = 		 seg_union->dir_name_len;   //
+	seg_union->output_ctx->ts_name 					=		 seg_union->ts_name;		//
 	printf("--------------->before transcode init function  ,seg_union->ts_name = %s..\n" ,seg_union->ts_name);
-	printf("seg_union->full_m3u8_name = %s \n" ,seg_union->full_m3u8_name);
 
-
-	/*	initialize the output context */
+	//add audio stream and video into the output_ctx ,of course ,set codec information also in the function init_output
 	init_output(seg_union->output_ctx ,seg_union->ts_name );  //add stream information in this function
 
-	//open video and audio ,set video_out_buf and audio_out_buf
+	//open video and audio codecs ,set video_out_buf and audio_out_buf
 	open_stream_codec(seg_union->output_ctx ,prog_no);
 	printf("--------------->after transcode init function ..\n");
-
-	/*segment element in output context*/
-	seg_union->output_ctx->segment_duration 		=		 seg_union->segment_duration;
-	seg_union->output_ctx->segment_no				= 		 seg_union->segment_no;
-	seg_union->output_ctx->dir_name_len 		    = 		 seg_union->dir_name_len;
-	seg_union->output_ctx->ts_prfix_name 			= 		 seg_union->ts_prfix_name;
-
-	seg_union->output_ctx->ts_name 					=		 seg_union->ts_name;
-	seg_union->output_ctx->full_m3u8_name			=		 seg_union->full_m3u8_name;
-	seg_union->output_ctx->mode_type				=		 seg_union->mode_type;
-
-	//add
-	seg_union->picture_capture = avcodec_alloc_frame();
-	seg_union->picture_capture_no = 0;
-
-
 
 	return 0;
 }
