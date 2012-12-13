@@ -23,8 +23,11 @@
 #** ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #** DEALINGS IN THE SOFTWARE.
 #** -LICENSE-END-
-lib_path=/home/chris/work/ffmpeg/refs/aac_h264/lib
-include_path=/home/chris/work/ffmpeg/refs/aac_h264/include
+#ffmpeg-1.0.1
+#lib_path=/home/chris/work/ffmpeg/refs/aac_h264/lib
+#include_path=/home/chris/work/ffmpeg/refs/aac_h264/include
+lib_path=/home/chris/work/ffmpeg/refs/ffmpeg-1.0.1/lib
+include_path=/home/chris/work/ffmpeg/refs/ffmpeg-1.0.1/include
 
 all:  
 	g++ -D_CHRIS -g  -c Capture.cpp  DeckLinkAPIDispatch.cpp	-I${include_path}

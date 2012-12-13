@@ -278,8 +278,8 @@ void * key_listen(void *handle) {
 			if (strcmp(str_consle_input1, "q\n") == 0) { //notice ,must end with the '\n'
 				printf("hahah -->q \n");
 				delegate->quit_mark = 1;
-//				exit(0); //here ,use exit ,and force kill current thread...
-				pthread_exit(0);
+				exit(0); //here ,use exit ,and force kill current thread...
+//				pthread_exit(0);
 				printf("after pthread_exit() in the listen key board thread \n");
 			}
 
@@ -464,16 +464,17 @@ int main(int argc, char *argv[])
 	pthread_create(&pid_key_listion , NULL ,key_listen ,delegate);
 	//new a thread to encode video data
 	pthread_t pid_video_encode;
+	pthread_t pid_video_encode1;
+	pthread_t pid_video_encode2;
 	pthread_create(&pid_video_encode , NULL ,encode_yuv_data ,delegate);
 
 	if(delegate->prog_num == 2){  //two different bitrate
 		pthread_t pid_video_encode1;
 		pthread_create(&pid_video_encode1 , NULL ,encode_yuv_data1 ,delegate);
 	}else if(delegate->prog_num == 3){ //three different bitrate
-		pthread_t pid_video_encode1;
+
 		pthread_create(&pid_video_encode1 , NULL ,encode_yuv_data1 ,delegate);
 
-		pthread_t pid_video_encode2;
 		pthread_create(&pid_video_encode2 , NULL ,encode_yuv_data2 ,delegate);
 	}
 
