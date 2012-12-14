@@ -76,7 +76,7 @@ AVStream * add_video_stream (AVFormatContext *fmt_ctx ,enum CodecID codec_id ,Ou
 	avctx->time_base.num = 1;
 
 
-	avctx->codec_type = FF_CODER_TYPE_AC;
+	avctx->coder_type = FF_CODER_TYPE_AC;		//cabac
 	//key frame
 //	avctx->keyint_min = ptr_output_ctx->frame_rate;//VIDEO_FRAME_RATE;
 //	avctx->scenechange_threshold = 0;
@@ -86,13 +86,16 @@ AVStream * add_video_stream (AVFormatContext *fmt_ctx ,enum CodecID codec_id ,Ou
 //	avctx->global_quality = 6;
 //
 //	avctx->thread_count = 1;
-////	avctx->cqp = 26;
-//	avctx->refs = 3;
-//	avctx->trellis = 2;
+	avctx->refs = 3;
+	avctx->trellis = 2;
 //
-//	avctx->me_method = 8;
-//	avctx->me_range = 16;
-//	avctx->me_subpel_quality = 7;
+	avctx->me_method = 8;		//umh
+	avctx->me_range = 24;
+	avctx->me_subpel_quality = 9; //subme
+
+	avctx->me_cmp = FF_CMP_CHROMA;	//set chroma_me = 1
+
+
 //	avctx->qmin = 10;
 //	avctx->qmax = 51;
 //	avctx->rc_initial_buffer_occupancy = 0.9;
@@ -108,9 +111,9 @@ AVStream * add_video_stream (AVFormatContext *fmt_ctx ,enum CodecID codec_id ,Ou
 //	avctx->flags2 = CODEC_FLAG2_MIXED_REFS;
 //	avctx->flags2 |= CODEC_FLAG2_8X8DCT;
 //	avctx->flags |= CODEC_FLAG_LOOP_FILTER;
-//	avctx->me_cmp = FF_CMP_CHROMA;
+
 //	avctx->flags2 |= CODEC_FLAG2_AUD;
-//	avctx->flags2 |= CODEC_FLAG2_FASTPSKIP;
+	avctx->flags2 |= CODEC_FLAG2_FAST;
 //	avctx->flags2 |= CODEC_FLAG2_BPYRAMID;   //allow B-frames to be used as references
 //	avctx->flags2 |= CODEC_FLAG_NORMALIZE_AQP;
 //	avctx->flags2 |= CODEC_FLAG2_WPRED;
@@ -276,8 +279,17 @@ static void open_video (Output_Context *ptr_output_ctx ,AVStream * st ,int prog_
 		av_dict_set(&opts, "tune", "film", 0);
 		av_dict_set(&opts, "preset", "veryslow", 0);
 //		av_dict_set(&opts, "deblock", "-1:-1", 0);	// / deblock = 1:0:0
+		av_dict_set(&opts, "deblock", "-1:-1", 0); //do not set 1:-1:-1
+
+		av_dict_set(&opts, "aq_mode", "1", 0);
+		av_dict_set(&opts, "psy", "1", 0);
+		av_dict_set(&opts, "psy_rd", "1.00:0.15", 0);
+		av_dict_set(&opts, "mixed_refs", "1", 0);
+		av_dict_set(&opts, "fast_pskip", "0", 0);
+
+
 		//connect the string content x264opts
-		av_dict_set(&opts, "x264opts", "bitrate=700:ref=3" ,0);
+		av_dict_set(&opts, "x264opts", "bitrate=700:ref=3:me=umh:bframes=3:b-adapt=1" ,0);
 
 //		av_dict_set(&opts, "partions", "all", 0);
 //		av_dict_set(&opts, "dct8x8", "0", 0);	//8x8dct=0
