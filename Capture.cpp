@@ -89,9 +89,6 @@ HRESULT DeckLinkCaptureDelegate::VideoInputFrameArrived(IDeckLinkVideoInputFrame
 						this->yuv_video_buf[i]->have_data_mark = 1; // not set
 						pthread_cond_signal(&this->yuv_video_buf[i]->yuv_buf_cond);
 					}
-					else{//others ,drop
-						printf("...........................\n");
-					}
 					pthread_mutex_unlock(&this->yuv_video_buf[i]->yuv_buf_mutex);
 				}
 
@@ -106,7 +103,7 @@ HRESULT DeckLinkCaptureDelegate::VideoInputFrameArrived(IDeckLinkVideoInputFrame
 	if (audioFrame)
 	{
 		//printf("audio .... ,frame count = %ld\n" ,audioFrame->GetSampleFrameCount());
-		int haha = audioFrame->GetSampleFrameCount() * CAPTURE_AUDIO_CHANNEL_NUM * (CAPTURE_AUDIO_SAMPLE_DEPTH / 8);
+		//int haha = audioFrame->GetSampleFrameCount() * CAPTURE_AUDIO_CHANNEL_NUM * (CAPTURE_AUDIO_SAMPLE_DEPTH / 8);
 		audioFrame->GetBytes(&audioFrameBytes);
 		int i;
 
