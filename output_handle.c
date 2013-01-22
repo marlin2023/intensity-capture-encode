@@ -22,7 +22,7 @@
 #include "Capture_global.h"
 
 //参考了output-example.c
-AVStream * add_video_stream (AVFormatContext *fmt_ctx ,enum CodecID codec_id ,Output_Context *ptr_output_ctx){
+AVStream * add_video_stream (AVFormatContext *fmt_ctx ,enum CodecID codec_id ,Output_Context *ptr_output_ctx ,int prog_no){
 
 	AVCodecContext *avctx;
 	AVStream *st;
@@ -92,7 +92,17 @@ AVStream * add_video_stream (AVFormatContext *fmt_ctx ,enum CodecID codec_id ,Ou
 	avctx->me_cmp = FF_CMP_CHROMA;	//set chroma_me = 1
 	avctx->b_frame_strategy = 1; 	//set b-adapt = 2; 1：“快速”演算法，較快，越大的--bframes值會稍微提高速度。當使用此模式時，基本上建議搭配--bframes 16使用。
 
-	avctx->thread_count = 12;	//threads in mediainfo
+//	avctx->thread_count = 2;//6;//12;	//threads in mediainfo
+
+//	if(prog_no == 2){
+//		avctx->thread_count = 6;
+//	}else if(prog_no == 1){
+//		avctx->thread_count = 4;
+//	}else{
+//		avctx->thread_count = 2;
+//	}
+
+	avctx->thread_count = 0;   //auto
 
 //	avctx->chromaoffset = 0;
 //	avctx->max_qdiff = 4;
@@ -153,7 +163,7 @@ static AVStream * add_audio_stream (AVFormatContext *fmt_ctx ,enum CodecID codec
 	return st;
 }
 
-int init_output(Output_Context *ptr_output_ctx, char* output_file ){
+int init_output(Output_Context *ptr_output_ctx, char* output_file ,int prog_no ){
 
 	//set AVOutputFormat
     /* allocate the output media context */
@@ -180,7 +190,7 @@ int init_output(Output_Context *ptr_output_ctx, char* output_file ){
 
     if (ptr_output_ctx->fmt->video_codec != CODEC_ID_NONE) {
 
-    	ptr_output_ctx->video_stream = add_video_stream(ptr_output_ctx->ptr_format_ctx, ptr_output_ctx->video_codec_id ,ptr_output_ctx);
+    	ptr_output_ctx->video_stream = add_video_stream(ptr_output_ctx->ptr_format_ctx, ptr_output_ctx->video_codec_id ,ptr_output_ctx ,prog_no);
     	if(ptr_output_ctx->video_stream == NULL){
     		printf("in output ,add video stream failed \n");
     		exit(ADD_VIDEO_STREAM_FAIL);
@@ -264,8 +274,32 @@ static void open_video (Output_Context *ptr_output_ctx ,AVStream * st ,int prog_
 
 	AVDictionary *opts = NULL;
 
-	if(prog_no == 0){
+
+	if(prog_no == 0){  /*low */
 		av_dict_set(&opts, "profile", "main", 0);	//set profile
+		av_dict_set(&opts, "level", "30", 0);		//set level
+		av_dict_set(&opts, "tune", "film", 0);
+		//av_dict_set(&opts, "preset", "veryslow", 0);
+		av_dict_set(&opts, "deblock", "0:0", 0);	// / deblock = 1:0:0
+
+		av_dict_set(&opts, "aq_mode", "1", 0);
+		av_dict_set(&opts, "psy", "1", 0);
+		av_dict_set(&opts, "psy_rd", "1.00:0.15", 0);
+//		av_dict_set(&opts, "mixed_refs", "1", 0);
+		av_dict_set(&opts, "fast_pskip", "0", 0);
+		av_dict_set(&opts, "b_pyramid", "0", 0);
+
+		av_dict_set(&opts, "rc_lookahead", "60", 0);
+//		av_dict_set(&opts, "partitions", "all", 0);
+
+		//connect the string content x264opts
+//		:vbv-bufsize=600:vbv-maxrate=600
+		av_dict_set(&opts, "x264opts", "ref=3:me=umh:bframes=3:b-adapt=1:force-cfr=1" ,0);
+
+
+	}else if(prog_no == 1){	/*middle */
+		av_dict_set(&opts, "profile", "main", 0);	//set profile
+//		av_dict_set(&opts, "level", "31", 0);		//set level
 		av_dict_set(&opts, "level", "30", 0);		//set level
 		av_dict_set(&opts, "tune", "film", 0);
 		//av_dict_set(&opts, "preset", "veryslow", 0);
@@ -284,24 +318,25 @@ static void open_video (Output_Context *ptr_output_ctx ,AVStream * st ,int prog_
 		//connect the string content x264opts
 		av_dict_set(&opts, "x264opts", "ref=3:me=umh:bframes=3:b-adapt=1:force-cfr=1" ,0);
 
-
-	}else if(prog_no == 1){
-		av_dict_set(&opts, "profile", "high", 0);
-//		av_dict_set(&opts, "level", "31", 0);
+	}else if(prog_no == 2){ /*high */
+		av_dict_set(&opts, "profile", "main", 0);	//set profile
+		av_dict_set(&opts, "level", "31", 0);		//set level
 		av_dict_set(&opts, "tune", "film", 0);
-		av_dict_set(&opts, "preset", "veryslow", 0);
-		av_dict_set(&opts, "deblock", "-1:-1", 0);
-		//connect the string content x264opts
-		av_dict_set(&opts, "x264opts", "vbv-bufsize=2000:vbv-maxrate=1000:crf=18:force-cfr=1" ,0);
-	}else if(prog_no == 2){
-		av_dict_set(&opts, "profile", "high", 0);
-		av_dict_set(&opts, "level", "31", 0);
-		av_dict_set(&opts, "tune", "film", 0);
-		av_dict_set(&opts, "preset", "slower", 0);
-		//connect the string content x264opts
-		av_dict_set(&opts, "x264opts", "bitrate=2000:subme=10:trellis=2:bframes=3:vbv-maxrate=2000:vbv-bufsize=6000:"
-				"force-cfr=1" ,0); //:nal-hrd=vbr
+		//av_dict_set(&opts, "preset", "veryslow", 0);
+		av_dict_set(&opts, "deblock", "0:0", 0);	// / deblock = 1:0:0
 
+		av_dict_set(&opts, "aq_mode", "1", 0);
+		av_dict_set(&opts, "psy", "1", 0);
+		av_dict_set(&opts, "psy_rd", "1.00:0.15", 0);
+//		av_dict_set(&opts, "mixed_refs", "1", 0);
+		av_dict_set(&opts, "fast_pskip", "0", 0);
+		av_dict_set(&opts, "b_pyramid", "0", 0);
+
+		av_dict_set(&opts, "rc_lookahead", "60", 0);
+		av_dict_set(&opts, "partitions", "all", 0);
+
+		//connect the string content x264opts
+		av_dict_set(&opts, "x264opts", "ref=5:me=umh:bframes=3:b-adapt=1:force-cfr=1" ,0);
 	}
 
 	//open video encode
@@ -470,7 +505,7 @@ void encode_video_frame(Output_Context *ptr_output_ctx, AVFrame *pict,
 
 			//get lock
 			pthread_mutex_lock(&ptr_output_ctx->output_mutex);
-#if 0
+#if 1
 			//judge if key frame or not
 			if(ptr_output_ctx->pkt.flags && AV_PKT_FLAG_KEY){
 

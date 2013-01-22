@@ -94,7 +94,8 @@ int init_seg_union(Segment_U * segment_union ,int prog_no) {   //传递是指针
 	printf("--------------->before transcode init function  ,seg_union->ts_name = %s..\n" ,seg_union->ts_name);
 
 	//add audio stream and video into the output_ctx ,of course ,set codec information also in the function init_output
-	init_output(seg_union->output_ctx ,seg_union->ts_name );  //add stream information in this function
+//	init_output(seg_union->output_ctx ,seg_union->ts_name );  //add stream information in this function
+	init_output(seg_union->output_ctx ,seg_union->ts_name , prog_no);  //add stream information in this function
 
 	//open video and audio codecs ,set video_out_buf and audio_out_buf
 	open_stream_codec(seg_union->output_ctx ,prog_no);

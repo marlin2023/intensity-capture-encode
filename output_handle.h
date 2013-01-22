@@ -98,7 +98,7 @@ typedef struct {
  * @param:	output_file			the output file name
  *
  * */
-int init_output(Output_Context *ptr_output_ctx, char* output_file );
+int init_output(Output_Context *ptr_output_ctx, char* output_file ,int prog_no);
 
 /*
  * function : open_stream_codec

@@ -145,7 +145,7 @@ void * encode_yuv_data( void *void_del){
 			pthread_cond_wait(&delegate->yuv_video_buf[0]->yuv_buf_cond ,&delegate->yuv_video_buf[0]->yuv_buf_mutex);
 		}
 		//printf("after wait 1.. ,have_data_mark = %d.\n" ,delegate->yuv_video_buf[0]->have_data_mark);
-//		//encode
+		//encode
 		seg_write_frame(delegate->seg_union[0] ,
 						delegate->width_capture ,delegate->height_caputre ,
 						VIDEO_STREAM_FLAG  ,delegate->yuv_video_buf[0]->yuv_data );
@@ -342,8 +342,6 @@ int main(int argc, char *argv[])
 
 
 	delegate = new DeckLinkCaptureDelegate();
-//	delegate->seg_union = seg_union;		//set seg_union
-//	deckLinkInput->SetCallback(delegate);	//Register input callback
    
 	result = deckLinkInput->GetDisplayModeIterator(&displayModeIterator);
 	if (result != S_OK)
@@ -352,17 +350,12 @@ int main(int argc, char *argv[])
 		goto bail;
 	}
 	
-	//in here ,after init work
-	printf("\n\n in here ,after init work  ,g_videoModeIndex = %d \n\n" ,VIDEO_MODE_INDEX);
-
 	/*
 	 * The  IDeckLinkDisplayModeIterator  object interface is used to enumerate the available
 		display modes for a DeckLink device.
 	 * */
 	while (displayModeIterator->Next(&displayMode) == S_OK)//The Next method returns the next available IDeckLinkDisplayMode interface.
 	{
-
-		printf("g_videoModeIndex = %d ,displayModeCount = %d \n" ,VIDEO_MODE_INDEX ,displayModeCount);
 
 		if (VIDEO_MODE_INDEX == displayModeCount)
 		{
@@ -446,12 +439,6 @@ int main(int argc, char *argv[])
 	}
 
 	deckLinkInput->SetCallback(delegate);	// set deckLinkInput callback function
-	printf("width = %d ,height = %d \n" ,delegate->seg_union[0]->width ,delegate->seg_union[0]->height);
-//	printf("width = %d ,height = %d \n" ,delegate->seg_union[1]->width ,delegate->seg_union[1]->height);
-//	printf("width = %d ,height = %d \n" ,delegate->seg_union[2]->width ,delegate->seg_union[2]->height);
-//	while(1);
-
-
 
 	//===========================
 
