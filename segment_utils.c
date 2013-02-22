@@ -129,6 +129,7 @@ int parse_option_argument(Segment_U ** seg_union_ptr ,int argc, char *argv[]) {
 					"--decollator		indicator a new program\n"
 					"--num_in_dir		completed ts-file number in the directory\n"
 					"--num_in_m3u8		ts record saved in the m3u8 list\n"
+					"./capture --decollator --mode 2 --dir /home/yyt/www-workspace/1234/426x240  --segment_time 5 --prefix_ts yyt --m3u8 playlist.m3u8 --frame_rate 25 --width 426 --height 240 --vb 400k --ab 64k --sample 44100 --channel 2 --num_in_m3u8 5 --num_in_dir 5 "
 					"\n");
 			exit(0);
 //			break;

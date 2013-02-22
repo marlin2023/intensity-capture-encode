@@ -8,7 +8,7 @@
 #ifndef CHRIS_GLOBAL_H_
 #define CHRIS_GLOBAL_H_
 
-#define 		SEG_VERSION						"0.0.1 - ffmpeg_1.0.1"
+#define 		SEG_VERSION						"0.0.2 - ffmpeg_1.0.1"
 
 /*	video parameter	*/
 #define 		VIDEO_CODEC_ID					CODEC_ID_H264

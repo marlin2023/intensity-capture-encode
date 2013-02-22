@@ -75,13 +75,14 @@ AVStream * add_video_stream (AVFormatContext *fmt_ctx ,enum CodecID codec_id ,Ou
 
 	avctx->coder_type = FF_CODER_TYPE_AC;		//cabac
 	//key frame
-//	avctx->keyint_min = ptr_output_ctx->frame_rate;//VIDEO_FRAME_RATE;
-//	avctx->scenechange_threshold = 0;
-//	avctx->gop_size = ptr_output_ctx->frame_rate;//VIDEO_FRAME_RATE;
+	avctx->keyint_min = ptr_output_ctx->frame_rate;//VIDEO_FRAME_RATE;
+	avctx->scenechange_threshold = 0;
+	avctx->gop_size = ptr_output_ctx->frame_rate;//VIDEO_FRAME_RATE;
 //
 //	//other
-//	avctx->global_quality = 6;
+	avctx->global_quality = 6;
 //
+
 	avctx->refs = 3;
 	avctx->trellis = 2;
 //
@@ -93,13 +94,12 @@ AVStream * add_video_stream (AVFormatContext *fmt_ctx ,enum CodecID codec_id ,Ou
 	avctx->b_frame_strategy = 1; 	//set b-adapt = 2; 1：“快速”演算法，較快，越大的--bframes值會稍微提高速度。當使用此模式時，基本上建議搭配--bframes 16使用。
 
 //	avctx->thread_count = 2;//6;//12;	//threads in mediainfo
-
 //	if(prog_no == 2){
-//		avctx->thread_count = 6;
+//		avctx->thread_count = 12;
 //	}else if(prog_no == 1){
-//		avctx->thread_count = 4;
+//		avctx->thread_count = 8;
 //	}else{
-//		avctx->thread_count = 2;
+//		avctx->thread_count = 4;
 //	}
 
 	avctx->thread_count = 0;   //auto
@@ -277,20 +277,24 @@ static void open_video (Output_Context *ptr_output_ctx ,AVStream * st ,int prog_
 
 	if(prog_no == 0){  /*low */
 		av_dict_set(&opts, "profile", "main", 0);	//set profile
-		av_dict_set(&opts, "level", "30", 0);		//set level
+		av_dict_set(&opts, "level", "21", 0);		//set level
 		av_dict_set(&opts, "tune", "film", 0);
-		//av_dict_set(&opts, "preset", "veryslow", 0);
+		av_dict_set(&opts, "preset", "slow", 0);
 		av_dict_set(&opts, "deblock", "0:0", 0);	// / deblock = 1:0:0
 
 		av_dict_set(&opts, "aq_mode", "1", 0);
 		av_dict_set(&opts, "psy", "1", 0);
-		av_dict_set(&opts, "psy_rd", "1.00:0.15", 0);
-//		av_dict_set(&opts, "mixed_refs", "1", 0);
+		av_dict_set(&opts, "psy_rd", "1.00:0.2", 0);
+		av_dict_set(&opts, "mixed_refs", "1", 0);
 		av_dict_set(&opts, "fast_pskip", "0", 0);
 		av_dict_set(&opts, "b_pyramid", "0", 0);
 
 		av_dict_set(&opts, "rc_lookahead", "60", 0);
 //		av_dict_set(&opts, "partitions", "all", 0);
+		av_dict_set(&opts, "dct8x8", "1", 0);
+		av_dict_set(&opts, "mbtree", "1", 0);
+//		av_dict_set(&opts, "aq_mode", "2", 0);
+//		av_dict_set(&opts, "aq_strength", "0.89", 0);
 
 		//connect the string content x264opts
 //		:vbv-bufsize=600:vbv-maxrate=600
@@ -299,44 +303,51 @@ static void open_video (Output_Context *ptr_output_ctx ,AVStream * st ,int prog_
 
 	}else if(prog_no == 1){	/*middle */
 		av_dict_set(&opts, "profile", "main", 0);	//set profile
-//		av_dict_set(&opts, "level", "31", 0);		//set level
 		av_dict_set(&opts, "level", "30", 0);		//set level
 		av_dict_set(&opts, "tune", "film", 0);
-		//av_dict_set(&opts, "preset", "veryslow", 0);
+		av_dict_set(&opts, "preset", "veryslow", 0);
 		av_dict_set(&opts, "deblock", "0:0", 0);	// / deblock = 1:0:0
 
 		av_dict_set(&opts, "aq_mode", "1", 0);
 		av_dict_set(&opts, "psy", "1", 0);
-		av_dict_set(&opts, "psy_rd", "1.00:0.15", 0);
-//		av_dict_set(&opts, "mixed_refs", "1", 0);
+		av_dict_set(&opts, "psy_rd", "1.00:0.2", 0);
+		av_dict_set(&opts, "mixed_refs", "1", 0);
 		av_dict_set(&opts, "fast_pskip", "0", 0);
 		av_dict_set(&opts, "b_pyramid", "0", 0);
 
 		av_dict_set(&opts, "rc_lookahead", "60", 0);
 //		av_dict_set(&opts, "partitions", "all", 0);
+		av_dict_set(&opts, "dct8x8", "1", 0);
+		//av_dict_set(&opts, "crf", "30", 0);
+		av_dict_set(&opts, "mbtree", "1", 0);
 
+//		av_dict_set(&opts, "aq_mode", "2", 0);
+//		av_dict_set(&opts, "aq_strength", "0.89", 0);
 		//connect the string content x264opts
-		av_dict_set(&opts, "x264opts", "ref=3:me=umh:bframes=3:b-adapt=1:force-cfr=1" ,0);
+		av_dict_set(&opts, "x264opts", "ref=6:me=umh:bframes=4:b-adapt=1:force-cfr=1" ,0);
 
 	}else if(prog_no == 2){ /*high */
 		av_dict_set(&opts, "profile", "main", 0);	//set profile
 		av_dict_set(&opts, "level", "31", 0);		//set level
 		av_dict_set(&opts, "tune", "film", 0);
-		//av_dict_set(&opts, "preset", "veryslow", 0);
+		av_dict_set(&opts, "preset", "veryslow", 0);
 		av_dict_set(&opts, "deblock", "0:0", 0);	// / deblock = 1:0:0
 
 		av_dict_set(&opts, "aq_mode", "1", 0);
 		av_dict_set(&opts, "psy", "1", 0);
-		av_dict_set(&opts, "psy_rd", "1.00:0.15", 0);
-//		av_dict_set(&opts, "mixed_refs", "1", 0);
+		av_dict_set(&opts, "psy_rd", "1.00:0.2", 0);
+		av_dict_set(&opts, "mixed_refs", "1", 0);		//mixed references
 		av_dict_set(&opts, "fast_pskip", "0", 0);
 		av_dict_set(&opts, "b_pyramid", "0", 0);
 
-		av_dict_set(&opts, "rc_lookahead", "60", 0);
-		av_dict_set(&opts, "partitions", "all", 0);
-
+		av_dict_set(&opts, "rc_lookahead", "80", 0);
+//		av_dict_set(&opts, "partitions", "all", 0);
+		av_dict_set(&opts, "dct8x8", "1", 0);
+		av_dict_set(&opts, "mbtree", "1", 0);
+//		av_dict_set(&opts, "aq_mode", "2", 0);
+//		av_dict_set(&opts, "aq_strength", "0.89", 0);
 		//connect the string content x264opts
-		av_dict_set(&opts, "x264opts", "ref=5:me=umh:bframes=3:b-adapt=1:force-cfr=1" ,0);
+		av_dict_set(&opts, "x264opts", "ref=6:me=umh:bframes=6:b-adapt=1:force-cfr=1" ,0);
 	}
 
 	//open video encode

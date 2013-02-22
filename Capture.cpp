@@ -429,7 +429,7 @@ int main(int argc, char *argv[])
 		delegate->seg_union[i]->output_ctx->img_convert_ctx = sws_getContext(
 				delegate->width_capture ,delegate->height_caputre ,PIX_FMT_UYVY422,
 				delegate->seg_union[i]->output_ctx->video_stream->codec->width ,delegate->seg_union[i]->output_ctx->video_stream->codec->height ,PIX_FMT_YUV420P ,
-				 SWS_BICUBIC ,NULL ,NULL ,NULL);
+				SWS_BILINEAR /*SWS_BICUBIC*/ ,NULL ,NULL ,NULL);
 
 		pthread_mutex_init(&delegate->yuv_video_buf[i]->yuv_buf_mutex, NULL);
 		pthread_cond_init(&delegate->yuv_video_buf[i]->yuv_buf_cond, NULL);
