@@ -38,6 +38,11 @@
 #define 		ID_AUDIO_STREAM					1
 
 
+//add generate jpeg file ,the width and height define in here
+#define 		JPEG_WIDTH						107
+#define			JPEG_HEIGHT						74
+#define 		JPEG_NAME					    "current.jpeg"
+#define 		JPEG_INTERVAL					60
 
 
 

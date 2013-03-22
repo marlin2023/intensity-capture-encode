@@ -8,7 +8,7 @@
 #include "DeckLinkAPI.h"
 #include "Capture.h"
 #include "Capture_global.h"
-
+#include "chris_global.h"
 extern "C"{
 #ifndef   UINT64_C
 
@@ -429,6 +429,12 @@ int main(int argc, char *argv[])
 		delegate->seg_union[i]->output_ctx->img_convert_ctx = sws_getContext(
 				delegate->width_capture ,delegate->height_caputre ,PIX_FMT_UYVY422,
 				delegate->seg_union[i]->output_ctx->video_stream->codec->width ,delegate->seg_union[i]->output_ctx->video_stream->codec->height ,PIX_FMT_YUV420P ,
+				SWS_BILINEAR /*SWS_BICUBIC*/ ,NULL ,NULL ,NULL);
+
+		//the img_convert_ctx used for the jpeg
+		delegate->seg_union[i]->output_ctx->RGB_img_convert_ctx = sws_getContext(
+				delegate->seg_union[i]->output_ctx->video_stream->codec->width ,delegate->seg_union[i]->output_ctx->video_stream->codec->height ,PIX_FMT_YUV420P,
+				JPEG_WIDTH ,JPEG_HEIGHT ,AV_PIX_FMT_RGB24 ,
 				SWS_BILINEAR /*SWS_BICUBIC*/ ,NULL ,NULL ,NULL);
 
 		pthread_mutex_init(&delegate->yuv_video_buf[i]->yuv_buf_mutex, NULL);

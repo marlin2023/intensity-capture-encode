@@ -39,6 +39,16 @@ typedef struct {
 	AVFrame *encoded_yuv_pict;
 	uint8_t * pict_buf;
 
+
+	//#start (use to generate the jpg file)
+	struct SwsContext *RGB_img_convert_ctx;
+	AVFrame *RGB_frame;
+	uint8_t *RGB_buffer;
+	char jpeg_name[1024];
+	double RGB_prev_segment_time ;
+	double RGB_curr_segment_time;
+	//#end
+
 	//audio resample
 	struct SwrContext *swr;
 	AVFifoBuffer *fifo;     /* for compression: one audio fifo per codec */

@@ -230,6 +230,25 @@ int init_output(Output_Context *ptr_output_ctx, char* output_file ,int prog_no )
     		    		ptr_output_ctx->video_stream->codec->height);
 
 
+    //#start (jpeg generate )
+    ptr_output_ctx->RGB_frame = avcodec_alloc_frame();
+    if(ptr_output_ctx->RGB_frame == NULL){
+   		printf("RGB_frame allocate failed %s ,%d line\n" ,__FILE__ ,__LINE__);
+   		exit(MEMORY_MALLOC_FAIL);
+   	}
+	int size_RGB = avpicture_get_size(AV_PIX_FMT_RGB24 ,JPEG_WIDTH ,JPEG_HEIGHT);
+
+	ptr_output_ctx->RGB_buffer = av_malloc(size_RGB);
+	if(ptr_output_ctx->RGB_buffer == NULL){
+	printf("RGB allocate failed ...\n");
+	exit(MEMORY_MALLOC_FAIL);
+	}
+	//bind
+	avpicture_fill((AVPicture *)ptr_output_ctx->RGB_frame ,ptr_output_ctx->RGB_buffer ,
+			AV_PIX_FMT_RGB24 ,JPEG_WIDTH ,JPEG_HEIGHT);
+
+    //#end
+
     /*	init some member value */
     ptr_output_ctx->audio_resample = 0;
     ptr_output_ctx->swr = NULL;

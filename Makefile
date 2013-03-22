@@ -34,7 +34,7 @@ include_path=/home/chris/work/ffmpeg/refs/ffmpeg-1.1.2/include
 all:  
 	g++ -D_CHRIS -g -pg -c Capture.cpp  DeckLinkAPIDispatch.cpp	-I${include_path}
 	gcc -D_CHRIS -g -pg -c segment_utils.c segment_yy.c	input_handle.c 	output_handle.c	-I${include_path}
-	gcc *.o -g -pg -D_CHRIS  -o capture -lstdc++  -L${lib_path} -lavformat -lavcodec  -lavutil -lswscale -lswresample -lm -ldl -lz -lpthread -lx264  -lfaac
+	gcc *.o -g -pg -D_CHRIS  -o capture -lstdc++  -L${lib_path} -lavformat -lavcodec  -lavutil -lswscale -lswresample -lm -ldl -lz -lpthread -lx264  -lfaac -ljpeg
 
 clean:
 	rm -f capture

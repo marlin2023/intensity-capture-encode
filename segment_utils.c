@@ -439,6 +439,48 @@ void update_log_file(Output_Context *ptr_output_ctx){
 	fclose(ptr_log);
 }
 
+//implication the compress the video frame to jpeg
+//libjpeg相关的头文件
+#include "jpeglib.h"
+static void draw_jpeg(AVPicture *pic, int width, int height, char * jpeg_name) {
+// AVPicture my_pic ;
+	struct jpeg_compress_struct cinfo;
+	struct jpeg_error_mgr jerr;
+	JSAMPROW row_pointer[1];
+	int row_stride;
+	uint8_t *buffer;
+	FILE *fp;
+
+	//vfmt2rgb(my_pic,pic) ;
+	buffer = pic->data[0];
+	fp = fopen(jpeg_name, "wb");
+	if (fp == NULL) {
+		av_log(NULL, AV_LOG_ERROR, "fopen %s error/n", jpeg_name);
+		return;
+	}
+	cinfo.err = jpeg_std_error(&jerr);
+	jpeg_create_compress(&cinfo);
+	jpeg_stdio_dest(&cinfo, fp);
+	cinfo.image_width = width;
+	cinfo.image_height = height;
+	cinfo.input_components = 3;
+	cinfo.in_color_space = JCS_RGB;
+	jpeg_set_defaults(&cinfo);
+
+	jpeg_set_quality(&cinfo, 80, 1 /*true*/);
+
+	jpeg_start_compress(&cinfo, 1 /*TRUE*/);
+	row_stride = width * 3;
+	while (cinfo.next_scanline < height) {
+		row_pointer[0] = &buffer[cinfo.next_scanline * row_stride];
+		(void) jpeg_write_scanlines(&cinfo, row_pointer, 1);
+	}
+	jpeg_finish_compress(&cinfo);
+	fclose(fp);
+	jpeg_destroy_compress(&cinfo);
+	printf("compress frame finished!==========================================>>>>>>>>>>>>>>>>>>>>>>>>>./n");
+	return;
+}
 
 void record_segment_time(Output_Context *ptr_output_ctx){
 
@@ -451,6 +493,8 @@ void record_segment_time(Output_Context *ptr_output_ctx){
 
 		printf("ptr_output_ctx->prev_segment_time = %f \n" ,ptr_output_ctx->prev_segment_time);
 
+		//jpeg_interval
+		ptr_output_ctx->RGB_prev_segment_time = ptr_output_ctx->prev_segment_time;
 	}
 
 	ptr_output_ctx->curr_segment_time =
@@ -458,11 +502,20 @@ void record_segment_time(Output_Context *ptr_output_ctx){
 										(ptr_output_ctx->pkt.pts )
 										- (double)ptr_output_ctx->ptr_format_ctx->start_time / AV_TIME_BASE;
 
-//	ptr_output_ctx->curr_segment_time =
-//						av_q2d(ptr_output_ctx->video_stream->time_base) *
-//						ptr_output_ctx->video_stream->pts.val
-//										- (double)ptr_output_ctx->ptr_format_ctx->start_time / AV_TIME_BASE;
-//	printf("ptr_output_ctx->prev_segment_time = %f \n" ,ptr_output_ctx->curr_segment_time);
+	ptr_output_ctx->RGB_curr_segment_time = ptr_output_ctx->curr_segment_time;
+
+	//generate jpeg
+	if(ptr_output_ctx->RGB_curr_segment_time - ptr_output_ctx->RGB_prev_segment_time >= JPEG_INTERVAL){  //unit :second
+		printf("generate time duration = %f \n" ,ptr_output_ctx->RGB_curr_segment_time - ptr_output_ctx->RGB_prev_segment_time);
+
+		//
+		sws_scale(ptr_output_ctx->RGB_img_convert_ctx, (const uint8_t* const *) ptr_output_ctx->encoded_yuv_pict->data,
+				ptr_output_ctx->encoded_yuv_pict->linesize, 0, ptr_output_ctx->encoded_yuv_pict->height,
+				ptr_output_ctx->RGB_frame->data, ptr_output_ctx->RGB_frame->linesize);
+		draw_jpeg((AVPicture*)ptr_output_ctx->RGB_frame ,JPEG_WIDTH ,JPEG_HEIGHT ,ptr_output_ctx->jpeg_name);
+
+		ptr_output_ctx->RGB_prev_segment_time = ptr_output_ctx->RGB_curr_segment_time;
+	}
 
 //	//time meet
 	if(ptr_output_ctx->curr_segment_time - ptr_output_ctx->prev_segment_time >= ptr_output_ctx->segment_duration){
