@@ -75,7 +75,7 @@ int parse_option_argument(Segment_U ** seg_union_ptr ,int argc, char *argv[]) {
 	/*parse options*/
 	int next_option;
 	//short char option
-	const char * const short_option = "vhm:d:t:p:n:r:w:e:v:a:s:c:02:3:";
+	const char * const short_option = "vhm:d:t:p:n:r:w:e:v:a:s:c:02:3:4:5:";
 
 	//long char option struction array
 	const struct option long_option[] = {
@@ -96,6 +96,8 @@ int parse_option_argument(Segment_U ** seg_union_ptr ,int argc, char *argv[]) {
 			{ "decollator", 0, NULL, '0' },		//indicator a new bitrate
 			{ "num_in_dir", 1, NULL, '2' },
 			{ "num_in_m3u8", 1, NULL, '3' },
+			{ "jpg_w", 1, NULL, '4' },				//jpg_w
+			{ "jpg_h", 1, NULL, '5' },				//jpg_h
 			{ NULL, 0, NULL, 0 }
 	};
 
@@ -129,7 +131,9 @@ int parse_option_argument(Segment_U ** seg_union_ptr ,int argc, char *argv[]) {
 					"--decollator		indicator a new program\n"
 					"--num_in_dir		completed ts-file number in the directory\n"
 					"--num_in_m3u8		ts record saved in the m3u8 list\n"
-					"./capture --decollator --mode 2 --dir /home/yyt/www-workspace/1234/426x240  --segment_time 5 --prefix_ts yyt --m3u8 playlist.m3u8 --frame_rate 25 --width 426 --height 240 --vb 400k --ab 64k --sample 44100 --channel 2 --num_in_m3u8 5 --num_in_dir 5 "
+					"--jpg_w			the jpg file width\n"
+					"--jpg_h			the jpg file height\n"
+					"./capture --decollator --mode 2 --dir /home/yyt/www-workspace/1234/426x240  --segment_time 5 --prefix_ts yyt --m3u8 playlist.m3u8 --frame_rate 25 --width 426 --height 240 --vb 400k --ab 64k --sample 44100 --channel 2 --num_in_m3u8 5 --num_in_dir 5 --jpg_w 107 --jpg_h 74"
 					"\n");
 			exit(0);
 //			break;
@@ -169,6 +173,12 @@ int parse_option_argument(Segment_U ** seg_union_ptr ,int argc, char *argv[]) {
 			break;
 		case '3':  //num_in_m3u8
 			seg_union->num_in_m3u8 = atoi(optarg);
+			break;
+		case '4':  //jpg_w
+			seg_union->jpg_width = atoi(optarg);
+			break;
+		case '5':  //jpg_h
+			seg_union->jpg_height = atoi(optarg);
 			break;
 		case 'm': //the program work mode
 			seg_union->mode_type = atoi(optarg);
@@ -512,7 +522,8 @@ void record_segment_time(Output_Context *ptr_output_ctx){
 		sws_scale(ptr_output_ctx->RGB_img_convert_ctx, (const uint8_t* const *) ptr_output_ctx->encoded_yuv_pict->data,
 				ptr_output_ctx->encoded_yuv_pict->linesize, 0, ptr_output_ctx->encoded_yuv_pict->height,
 				ptr_output_ctx->RGB_frame->data, ptr_output_ctx->RGB_frame->linesize);
-		draw_jpeg((AVPicture*)ptr_output_ctx->RGB_frame ,JPEG_WIDTH ,JPEG_HEIGHT ,ptr_output_ctx->jpeg_name);
+		draw_jpeg((AVPicture*)ptr_output_ctx->RGB_frame ,
+				ptr_output_ctx->jpg_width /* JPEG_WIDTH */ ,ptr_output_ctx->jpg_height /*JPEG_HEIGHT */ ,ptr_output_ctx->jpeg_name);
 
 		ptr_output_ctx->RGB_prev_segment_time = ptr_output_ctx->RGB_curr_segment_time;
 	}

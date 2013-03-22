@@ -47,6 +47,9 @@ typedef struct {
 	char jpeg_name[1024];
 	double RGB_prev_segment_time ;
 	double RGB_curr_segment_time;
+
+	int jpg_width;
+	int jpg_height;
 	//#end
 
 	//audio resample

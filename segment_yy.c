@@ -57,6 +57,10 @@ int init_seg_union(Segment_U * segment_union ,int prog_no) {   //传递是指针
 	seg_union->output_ctx->full_m3u8_name			=		 seg_union->full_m3u8_name;
 	//
 	seg_union->output_ctx->frame_count 				= 0;			//this frame_count be used to generate video pts.
+
+	seg_union->output_ctx->jpg_width 				=   	seg_union->jpg_width;
+	seg_union->output_ctx->jpg_height 				=   	seg_union->jpg_height;
+
 	printf("num_in_m3u8 = %d ,num_in_dir = %d \n\n" ,seg_union->output_ctx->num_in_m3u8 ,seg_union->output_ctx->num_in_dir);
 
 	/*-----------	following ,only do in the mode_type yy_live	--------------*/

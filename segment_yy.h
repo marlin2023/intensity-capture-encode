@@ -63,6 +63,9 @@ typedef struct Segment_U{
 	AVFrame *picture_capture;
 	unsigned int picture_capture_no;
 
+	//the width and height of the jpg
+	int jpg_width;
+	int jpg_height;
 
 
 }Segment_U;

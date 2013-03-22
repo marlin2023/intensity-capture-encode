@@ -236,7 +236,7 @@ int init_output(Output_Context *ptr_output_ctx, char* output_file ,int prog_no )
    		printf("RGB_frame allocate failed %s ,%d line\n" ,__FILE__ ,__LINE__);
    		exit(MEMORY_MALLOC_FAIL);
    	}
-	int size_RGB = avpicture_get_size(AV_PIX_FMT_RGB24 ,JPEG_WIDTH ,JPEG_HEIGHT);
+	int size_RGB = avpicture_get_size(AV_PIX_FMT_RGB24 ,ptr_output_ctx->jpg_width /*JPEG_WIDTH*/ ,ptr_output_ctx->jpg_height /*JPEG_HEIGHT*/);
 
 	ptr_output_ctx->RGB_buffer = av_malloc(size_RGB);
 	if(ptr_output_ctx->RGB_buffer == NULL){
@@ -245,7 +245,7 @@ int init_output(Output_Context *ptr_output_ctx, char* output_file ,int prog_no )
 	}
 	//bind
 	avpicture_fill((AVPicture *)ptr_output_ctx->RGB_frame ,ptr_output_ctx->RGB_buffer ,
-			AV_PIX_FMT_RGB24 ,JPEG_WIDTH ,JPEG_HEIGHT);
+			AV_PIX_FMT_RGB24 ,ptr_output_ctx->jpg_width /*JPEG_WIDTH*/ ,ptr_output_ctx->jpg_height /*JPEG_HEIGHT*/);
 
     //#end
 
