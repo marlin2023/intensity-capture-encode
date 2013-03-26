@@ -94,8 +94,9 @@ int init_seg_union(Segment_U * segment_union ,int prog_no) {   //传递是指针
 	create_first_ts_name(seg_union ,seg_union->mode_type);
 
 	//#create jpeg filename
-	sprintf(seg_union->output_ctx->jpeg_name ,"%s/%s" ,seg_union->storage_dir ,LOG_FILE_NAME);
+	sprintf(seg_union->output_ctx->jpeg_name ,"%s/%s" ,seg_union->storage_dir ,JPEG_NAME);
 
+	printf("after init ,jpeg_name = -%s- \n" ,seg_union->output_ctx->jpeg_name);
 	//the followint ,dir_name_len and ts_name set must be set after the function create_first_ts_name!!!!
 	seg_union->output_ctx->dir_name_len 		    = 		 seg_union->dir_name_len;   //
 	seg_union->output_ctx->ts_name 					=		 seg_union->ts_name;		//
