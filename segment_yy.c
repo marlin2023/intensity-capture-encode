@@ -58,9 +58,6 @@ int init_seg_union(Segment_U * segment_union ,int prog_no) {   //传递是指针
 	//
 	seg_union->output_ctx->frame_count 				= 0;			//this frame_count be used to generate video pts.
 
-	seg_union->output_ctx->jpg_width 				=   	seg_union->jpg_width;
-	seg_union->output_ctx->jpg_height 				=   	seg_union->jpg_height;
-
 	printf("num_in_m3u8 = %d ,num_in_dir = %d \n\n" ,seg_union->output_ctx->num_in_m3u8 ,seg_union->output_ctx->num_in_dir);
 
 	/*-----------	following ,only do in the mode_type yy_live	--------------*/
@@ -93,10 +90,6 @@ int init_seg_union(Segment_U * segment_union ,int prog_no) {   //传递是指针
 	//splice the first ts name
 	create_first_ts_name(seg_union ,seg_union->mode_type);
 
-	//#create jpeg filename
-	sprintf(seg_union->output_ctx->jpeg_name ,"%s/%s" ,seg_union->storage_dir ,JPEG_NAME);
-
-	printf("after init ,jpeg_name = -%s- \n" ,seg_union->output_ctx->jpeg_name);
 	//the followint ,dir_name_len and ts_name set must be set after the function create_first_ts_name!!!!
 	seg_union->output_ctx->dir_name_len 		    = 		 seg_union->dir_name_len;   //
 	seg_union->output_ctx->ts_name 					=		 seg_union->ts_name;		//
