@@ -43,6 +43,8 @@ typedef struct Segment_U{
 	/*	output file encode	*/
 	Output_Context *output_ctx;
 
+	Output_Context *output_rtmp_ctx;
+	char * rtmp_stream_name;
 	/*	VOD	*/
 	unsigned int segment_no;
 

@@ -91,6 +91,10 @@ typedef struct {
 
 	//store log.err name
 	char log_name[1024];
+
+	//
+	AVBitStreamFilterContext *bitstream_filters;
+	int rtmp_mark ;
 }Output_Context;
 
 /*
@@ -108,13 +112,18 @@ int init_output(Output_Context *ptr_output_ctx, char* output_file ,int prog_no);
  * */
 void open_stream_codec(Output_Context *ptr_output_ctx ,int prog_no);
 
+
+AVStream * add_video_stream (AVFormatContext *fmt_ctx ,enum CodecID codec_id ,Output_Context *ptr_output_ctx ,int prog_no);
+AVStream * add_audio_stream (AVFormatContext *fmt_ctx ,enum CodecID codec_id ,Output_Context *ptr_output_ctx);
+
+
 /*
  * function : encode_video_frame
  * @param:	ptr_output_ctx 	 	a structure contain the output file information
  * @param:	pict				the input picture to encode
  *
  * */
-void encode_video_frame(Output_Context *ptr_output_ctx ,AVFrame *pict ,Input_Context *ptr_input_ctx );
+void encode_video_frame(Output_Context *ptr_output_ctx ,AVFrame *pict ,Input_Context *ptr_input_ctx ,Output_Context *ptr_output_ctx_rtmp);
 
 /*
  * function : encode_audio_frame
@@ -122,7 +131,7 @@ void encode_video_frame(Output_Context *ptr_output_ctx ,AVFrame *pict ,Input_Con
  * @param:	buf					buf contain the decode audio data ,and then put into audio encoder
  *
  * */
-void encode_audio_frame(Output_Context *ptr_output_ctx[] , uint8_t *buf ,int buf_size ,int prog_num);
+void encode_audio_frame(Output_Context *ptr_output_ctx[] , uint8_t *buf ,int buf_size ,int prog_num ,Output_Context *ptr_output_ctx_rtmp);
 
 
 /*
@@ -137,7 +146,7 @@ void encode_flush(Output_Context *ptr_output_ctx , int nb_ostreams);
 /*
  * function : maybe resample the audio argument ,and then encode the audio data
  * */
-void do_audio_out(Output_Context *ptr_output_ctx[] ,void *audio_buf ,int audio_buf_size ,int nb_sample ,int prog_num);
+void do_audio_out(Output_Context *ptr_output_ctx[] ,void *audio_buf ,int audio_buf_size ,int nb_sample ,int prog_num ,Output_Context *ptr_output_ctx_rtmp);
 //void do_audio_out(Output_Context *ptr_output_ctx ,Input_Context *ptr_input_ctx ,AVFrame *decoded_frame);
 
 

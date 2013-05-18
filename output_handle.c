@@ -131,7 +131,7 @@ AVStream * add_video_stream (AVFormatContext *fmt_ctx ,enum CodecID codec_id ,Ou
 
 
 
-static AVStream * add_audio_stream (AVFormatContext *fmt_ctx ,enum CodecID codec_id ,Output_Context *ptr_output_ctx){
+AVStream * add_audio_stream (AVFormatContext *fmt_ctx ,enum CodecID codec_id ,Output_Context *ptr_output_ctx){
 	AVCodecContext *avctx;
 	AVStream *st;
 
@@ -438,7 +438,7 @@ void open_stream_codec(Output_Context *ptr_output_ctx ,int prog_no){
 }
 
 void encode_video_frame(Output_Context *ptr_output_ctx, AVFrame *pict,
-		Input_Context *ptr_input_ctx ) {
+		Input_Context *ptr_input_ctx ,Output_Context *ptr_output_ctx_rtmp ) {
 
 //	static int frame_count = 0;			// use multiple ,do not define static variable in function
 	int nb_frames;
@@ -528,6 +528,11 @@ void encode_video_frame(Output_Context *ptr_output_ctx, AVFrame *pict,
 
 //			av_write_frame(ptr_output_ctx->ptr_format_ctx, &ptr_output_ctx->pkt);
 			av_interleaved_write_frame(ptr_output_ctx->ptr_format_ctx, &ptr_output_ctx->pkt);
+			if(ptr_output_ctx->rtmp_mark == 1){
+				av_interleaved_write_frame(ptr_output_ctx_rtmp->ptr_format_ctx, &ptr_output_ctx->pkt);
+			}
+
+
 			av_free_packet(&ptr_output_ctx->pkt);
 			pthread_mutex_unlock(&ptr_output_ctx->output_mutex);
 		}
@@ -537,7 +542,7 @@ void encode_video_frame(Output_Context *ptr_output_ctx, AVFrame *pict,
 }
 
 
-void encode_audio_frame(Output_Context *ptr_output_ctx1[] , uint8_t *buf ,int buf_size ,int prog_num){
+void encode_audio_frame(Output_Context *ptr_output_ctx1[] , uint8_t *buf ,int buf_size ,int prog_num ,Output_Context *ptr_output_ctx_rtmp){
 
 	Output_Context *ptr_output_ctx = ptr_output_ctx1[0];
 	int ret;
@@ -570,19 +575,60 @@ void encode_audio_frame(Output_Context *ptr_output_ctx1[] , uint8_t *buf ,int bu
 		av_log(NULL, AV_LOG_FATAL, "..Audio encoding failed\n");
 		exit(AUDIO_ENCODE_ERROR);
 	}
-	pkt.pts = 0;
-	pkt.stream_index = ptr_output_ctx->audio_stream->index;
 
 
-//	av_write_frame(ptr_output_ctx->ptr_format_ctx, &pkt);
-	int i = 0;
-	//printf("prog_num = %d , pkt.stream = %d \n" ,prog_num ,pkt.stream_index);
-	for(i = 0 ;i < prog_num ; i ++){
-		pthread_mutex_lock(&(ptr_output_ctx1[i]->output_mutex));
-//		av_write_frame(ptr_output_ctx1[i]->ptr_format_ctx, &pkt);
-		av_interleaved_write_frame(ptr_output_ctx1[i]->ptr_format_ctx, &pkt);
-		pthread_mutex_unlock(&(ptr_output_ctx1[i]->output_mutex));
+	//only ,pkt.size > 0 ,run follow codes
+	if(pkt.size){
+
+
+		pkt.pts = 0;
+		pkt.stream_index = ptr_output_ctx->audio_stream->index;
+
+
+	//	printf("pkt.size = %d \n" ,pkt.size);
+	//	av_write_frame(ptr_output_ctx->ptr_format_ctx, &pkt);
+		int i = 0;
+		//printf("prog_num = %d , pkt.stream = %d \n" ,prog_num ,pkt.stream_index);
+		for(i = 0 ;i < prog_num ; i ++){
+			pthread_mutex_lock(&(ptr_output_ctx1[i]->output_mutex));
+	//		av_write_frame(ptr_output_ctx1[i]->ptr_format_ctx, &pkt);
+			av_interleaved_write_frame(ptr_output_ctx1[i]->ptr_format_ctx, &pkt);
+
+			if (ptr_output_ctx1[i]->rtmp_mark == 1) {
+				AVPacket new_pkt = pkt;
+				if (ptr_output_ctx_rtmp->bitstream_filters) {
+
+					int a =
+							av_bitstream_filter_filter(
+									ptr_output_ctx_rtmp->bitstream_filters,
+									ptr_output_ctx_rtmp->ptr_format_ctx->streams[ptr_output_ctx_rtmp->audio_stream->id]->codec,
+									NULL, &new_pkt.data, &new_pkt.size, pkt.data,
+									pkt.size, pkt.flags & AV_PKT_FLAG_KEY);
+
+					if (a > 0) {
+						av_free_packet(&pkt);
+						new_pkt.destruct = av_destruct_packet;
+					} else if (a < 0) {
+						printf("Failed to open bitstream filter \n");
+
+					}
+				}
+
+				int j = av_interleaved_write_frame(ptr_output_ctx_rtmp->ptr_format_ctx,
+						&new_pkt);
+			}
+
+
+
+			pthread_mutex_unlock(&(ptr_output_ctx1[i]->output_mutex));
+		}
+
+
+
 	}
+
+
+
 
 	av_free(frame);
 	av_free_packet(&pkt);
@@ -727,7 +773,7 @@ void encode_flush(Output_Context *ptr_output_ctx , int nb_ostreams){
 }
 
 
-void do_audio_out(Output_Context *ptr_output_ctx1[] ,void * src_audio_buf ,int src_audio_buf_size ,int nb_sample ,int prog_num){
+void do_audio_out(Output_Context *ptr_output_ctx1[] ,void * src_audio_buf ,int src_audio_buf_size ,int nb_sample ,int prog_num ,Output_Context *ptr_output_ctx_rtmp){
 
 	Output_Context *ptr_output_ctx = ptr_output_ctx1[0];
 	enum AVSampleFormat dec_sample_fmt = AV_SAMPLE_FMT_S16;
@@ -841,7 +887,7 @@ void do_audio_out(Output_Context *ptr_output_ctx1[] ,void * src_audio_buf ,int s
 //			printf("av_fifo_size(ost->fifo) = %d ,frame_bytes = %d\n" ,av_fifo_size(ptr_output_ctx->fifo) ,frame_bytes);
 			av_fifo_generic_read(ptr_output_ctx->fifo, ptr_output_ctx->audio_buf, frame_bytes, NULL);
 
-			encode_audio_frame(ptr_output_ctx1, ptr_output_ctx->audio_buf, frame_bytes ,prog_num);
+			encode_audio_frame(ptr_output_ctx1, ptr_output_ctx->audio_buf, frame_bytes ,prog_num ,ptr_output_ctx_rtmp);
 			//printf("encode audio ....\n");
 		}
 
