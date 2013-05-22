@@ -120,7 +120,7 @@ HRESULT DeckLinkCaptureDelegate::VideoInputFrameArrived(IDeckLinkVideoInputFrame
 		for(i = 0; i < 1 ; i ++){
 			do_audio_out(output_ctx1 ,audioFrameBytes
 							,audioFrame->GetSampleFrameCount() * CAPTURE_AUDIO_CHANNEL_NUM * (CAPTURE_AUDIO_SAMPLE_DEPTH / 8)
-							,audioFrame->GetSampleFrameCount() ,this->prog_num ,this->seg_union[1]->output_rtmp_ctx);
+							,audioFrame->GetSampleFrameCount() ,this->prog_num );
 		}
 
 //			write(audioOutputFile, audioFrameBytes, audioFrame->GetSampleFrameCount() * AUDIO_CHANNEL_NUM * (AUDIO_SAMPLE_DEPTH / 8));

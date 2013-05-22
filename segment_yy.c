@@ -103,44 +103,6 @@ int init_seg_union(Segment_U * segment_union ,int prog_no) {   //传递是指针
 	open_stream_codec(seg_union->output_ctx ,prog_no);
 	printf("--------------->after transcode init function ..\n");
 
-	// rtmp stream for 640x360
-	if(prog_no == 1){  //640x360
-
-		seg_union->output_ctx->rtmp_mark = 1;
-
-
-		//malloc Output_context
-		if( (seg_union->output_rtmp_ctx = malloc (sizeof(Output_Context))) == NULL){
-
-			printf("output_rtmp_ctx malloc failed .\n");
-			exit(MEMORY_MALLOC_FAIL);
-		}
-
-
-		init_rtmp_output(seg_union->output_rtmp_ctx ,seg_union->rtmp_stream_name ,seg_union->output_ctx);
-		seg_union->output_rtmp_ctx->fifo = av_fifo_alloc(1024);
-		if (!seg_union->output_rtmp_ctx->fifo) {
-			exit (1);
-		}
-		open_stream_codec(seg_union->output_rtmp_ctx ,prog_no);
-
-
-		seg_union->output_rtmp_ctx->bitstream_filters = av_bitstream_filter_init("aac_adtstoasc"); //
-	    if (!(seg_union->output_rtmp_ctx->fmt->flags & AVFMT_NOFILE)) {		//for mp4 or mpegts ,this must be performed
-	        if (avio_open(&(seg_union->output_rtmp_ctx->ptr_format_ctx->pb), seg_union->rtmp_stream_name, AVIO_FLAG_WRITE) < 0) {
-	            fprintf(stderr, "Could not open '%s'\n", seg_union->rtmp_stream_name);
-	            exit(OPEN_MUX_FILE_FAIL);
-	        }
-	    }
-	    // write the stream header, if any
-	    avformat_write_header(seg_union->output_rtmp_ctx->ptr_format_ctx ,NULL);
-
-	    printf("seg_union->rtmp_stream_name = %s \n" ,seg_union->rtmp_stream_name);
-//	    while(1);
-	}else{
-		seg_union->output_rtmp_ctx = NULL;
-		seg_union->output_ctx->rtmp_mark = 0;
-	}
 
 	return 0;
 }
@@ -183,7 +145,7 @@ int seg_write_frame(Segment_U * seg_union ,int input_width ,int input_height ,in
 
 	//second swscale
 	encode_video_frame(ptr_output_ctx, ptr_output_ctx->encoded_yuv_pict,
-			NULL ,seg_union->output_rtmp_ctx);
+			NULL );
 
 
 	return 0;

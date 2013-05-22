@@ -21,53 +21,6 @@
 #include "chris_global.h"
 #include "chris_error.h"
 #include "segment_yy.h"
-
-//int parse_options_chris(int argc, char *argv[]) {
-//
-//	int ret = 0;
-//	/*parse options*/
-//	int next_option;
-//	//short char option
-//	const char * const short_option = "vhm:d:t:p:n:r:w:e:v:a:s:c:0";
-//
-//	//long char option struction array
-//	const struct option long_option[] = {
-//			{ "version", 0, NULL, 'v' },
-//			{ "help",	0, NULL, 'h' },
-//			{ "mode", 1, NULL, 'm' }, //execute mode
-//			{ "dir", 1, NULL, 'd' }, //ts storage directory
-//			{ "segment_time", 1, NULL, 't' }, //segment duration
-//			{ "prefix_ts", 1, NULL, 'p' }, //the prefix in the m3u8 file
-//			{ "m3u8_name", 1, NULL, 'n' }, //m3u8 name
-//			{ "frame_rate", 1, NULL, 'r' }, //frame rate
-//			{ "width", 1, NULL, 'w' }, //video width
-//			{ "height", 1, NULL, 'e' }, //video height
-//			{ "vb", 1, NULL, 'o' }, //video bitrate
-//			{ "ab", 1, NULL, 'a' }, //audio bitrate
-//			{ "sample", 1, NULL, 's' }, //audio sample
-//			{ "channel", 1, NULL, 'c' }, //audio channels
-//			{ "decollator", 0, NULL, '0' },
-//			{ NULL, 0, NULL, 0 }
-//	};
-//
-//	do {
-//
-//		next_option = getopt_long(argc, argv, short_option, long_option, NULL);
-//
-//		switch (next_option) {
-//
-//		case '0':
-//			ret ++;
-//			break;
-//		default:		//there is no options
-//			break;
-//
-//		}
-//	} while (next_option != -1);
-//
-//	return ret;
-//}
-
 int parse_option_argument(Segment_U ** seg_union_ptr ,int argc, char *argv[]) {
 
 	Segment_U * seg_union = NULL;
@@ -75,7 +28,7 @@ int parse_option_argument(Segment_U ** seg_union_ptr ,int argc, char *argv[]) {
 	/*parse options*/
 	int next_option;
 	//short char option
-	const char * const short_option = "vhm:d:t:p:n:r:w:e:v:a:s:c:02:3:9:";
+	const char * const short_option = "vhm:d:t:p:n:r:w:e:v:a:s:c:02:3:";
 
 	//long char option struction array
 	const struct option long_option[] = {
@@ -96,7 +49,6 @@ int parse_option_argument(Segment_U ** seg_union_ptr ,int argc, char *argv[]) {
 			{ "decollator", 0, NULL, '0' },		//indicator a new bitrate
 			{ "num_in_dir", 1, NULL, '2' },
 			{ "num_in_m3u8", 1, NULL, '3' },
-			{ "rtmp_name", 1, NULL, '9' },
 			{ NULL, 0, NULL, 0 }
 	};
 
@@ -130,8 +82,7 @@ int parse_option_argument(Segment_U ** seg_union_ptr ,int argc, char *argv[]) {
 					"--decollator		indicator a new program\n"
 					"--num_in_dir		completed ts-file number in the directory\n"
 					"--num_in_m3u8		ts record saved in the m3u8 list\n"
-					"--rtmp_name		if dup this ts stream in rtmp streaming ,please set it\n"
-					"./capture --decollator --mode 2 --dir ./test/426x240  --segment_time 5 --prefix_ts yyt --m3u8 playlist.m3u8 --frame_rate 25 --width 426 --height 240 --vb 400k --ab 64k --sample 44100 --channel 2 --num_in_m3u8 5 --num_in_dir 5 --rtmp_name rtmp://117.79.131.131/stream/streamlive"
+					"./capture --decollator --mode 2 --dir ./test/426x240  --segment_time 5 --prefix_ts yyt --m3u8 playlist.m3u8 --frame_rate 25 --width 426 --height 240 --vb 400k --ab 64k --sample 44100 --channel 2 --num_in_m3u8 5 --num_in_dir 5"
 					"\n");
 			exit(0);
 //			break;
@@ -171,9 +122,6 @@ int parse_option_argument(Segment_U ** seg_union_ptr ,int argc, char *argv[]) {
 			break;
 		case '3':  //num_in_m3u8
 			seg_union->num_in_m3u8 = atoi(optarg);
-			break;
-		case '9': //the ts file in the m3u8 file
-			seg_union->rtmp_stream_name = optarg;
 			break;
 		case 'm': //the program work mode
 			seg_union->mode_type = atoi(optarg);

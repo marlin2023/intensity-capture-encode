@@ -8,7 +8,7 @@
 #ifndef CHRIS_GLOBAL_H_
 #define CHRIS_GLOBAL_H_
 
-#define 		SEG_VERSION						"0.0.3 - ffmpeg_1.1.2"
+#define 		SEG_VERSION						"0.0.4.1.2.1 - magic_"
 
 /*	video parameter	*/
 #define 		VIDEO_CODEC_ID					CODEC_ID_H264
@@ -36,13 +36,6 @@
 #define			AUDIO_CHANNAL					2
 
 #define 		ID_AUDIO_STREAM					1
-
-
-//add generate jpeg file ,the width and height define in here
-#define 		JPEG_WIDTH						107
-#define			JPEG_HEIGHT						74
-#define 		JPEG_NAME					    "current.jpg"
-#define 		JPEG_INTERVAL					60
 
 
 
