@@ -30,13 +30,13 @@ int init_seg_union(Segment_U * segment_union ,int prog_no) {   //传递是指针
 
 	// create m3u8 file
 	create_m3u8_name(seg_union);
-	printf("seg_union->full_m3u8_name = %s \n" ,seg_union->full_m3u8_name);
+	chris_printf("seg_union->full_m3u8_name = %s \n" ,seg_union->full_m3u8_name);
 
 	/*----------following ,start to set  Output_Context information----- */
 	//malloc Output_context
 	if( (seg_union->output_ctx = malloc (sizeof(Output_Context))) == NULL){
 
-		printf("ptr_output_ctx malloc failed .\n");
+		fprintf(stderr ,"ptr_output_ctx malloc failed .\n");
 		exit(MEMORY_MALLOC_FAIL);
 	}
 	//segment element in output context
@@ -55,10 +55,12 @@ int init_seg_union(Segment_U * segment_union ,int prog_no) {   //传递是指针
 	//
 	seg_union->output_ctx->segment_no				= 		 seg_union->segment_no;
 	seg_union->output_ctx->full_m3u8_name			=		 seg_union->full_m3u8_name;
+	seg_union->output_ctx->m3u8						= 		 seg_union->m3u8_name;
 	//
 	seg_union->output_ctx->frame_count 				= 0;			//this frame_count be used to generate video pts.
 
-	printf("num_in_m3u8 = %d ,num_in_dir = %d \n\n" ,seg_union->output_ctx->num_in_m3u8 ,seg_union->output_ctx->num_in_dir);
+
+	chris_printf("num_in_m3u8 = %d ,num_in_dir = %d \n\n" ,seg_union->output_ctx->num_in_m3u8 ,seg_union->output_ctx->num_in_dir);
 
 	/*-----------	following ,only do in the mode_type yy_live	--------------*/
 	if(seg_union->mode_type == YY_LIVE){	// live mode
@@ -72,10 +74,10 @@ int init_seg_union(Segment_U * segment_union ,int prog_no) {   //传递是指针
 		}
 		memset(seg_union->output_ctx->live_write_buf ,0  ,1024*100);
 
-		printf("ptr_output_ctx->num_in_m3u8 = %d \n" ,seg_union->output_ctx->num_in_m3u8);
+		chris_printf("ptr_output_ctx->num_in_m3u8 = %d \n" ,seg_union->output_ctx->num_in_m3u8);
 		seg_union->output_ctx->seg_duration_arr = malloc(sizeof(double) *  ( seg_union->output_ctx->num_in_m3u8 + 1) );  	//use to storage the every ts file length in the m3u8 ,the array[0] reserved
 		if(seg_union->output_ctx->seg_duration_arr == NULL){
-			printf("seg_duration_arr malloc failed .. ,%s ,line %d \n" ,__FILE__ ,__LINE__);
+			fprintf(stderr ,"seg_duration_arr malloc failed .. ,%s ,line %d \n" ,__FILE__ ,__LINE__);
 			exit(MEMORY_MALLOC_FAIL);
 		}
 
@@ -83,7 +85,7 @@ int init_seg_union(Segment_U * segment_union ,int prog_no) {   //传递是指针
 		int ret =find_log_file(seg_union);
 		if(ret){//find the log file ,and recover the scene ,recover the segment_no use to create the ts name
 			recover_from_log(seg_union);
-			printf("......after recover from the log file ...\n\n\n");
+			chris_printf("......after recover from the log file ...\n\n\n");
 		}
 	}
 
@@ -93,7 +95,7 @@ int init_seg_union(Segment_U * segment_union ,int prog_no) {   //传递是指针
 	//the followint ,dir_name_len and ts_name set must be set after the function create_first_ts_name!!!!
 	seg_union->output_ctx->dir_name_len 		    = 		 seg_union->dir_name_len;   //
 	seg_union->output_ctx->ts_name 					=		 seg_union->ts_name;		//
-	printf("--------------->before transcode init function  ,seg_union->ts_name = %s..\n" ,seg_union->ts_name);
+	chris_printf("--------------->before transcode init function  ,seg_union->ts_name = %s..\n" ,seg_union->ts_name);
 
 	//add audio stream and video into the output_ctx ,of course ,set codec information also in the function init_output
 //	init_output(seg_union->output_ctx ,seg_union->ts_name );  //add stream information in this function
@@ -101,7 +103,7 @@ int init_seg_union(Segment_U * segment_union ,int prog_no) {   //传递是指针
 
 	//open video and audio codecs ,set video_out_buf and audio_out_buf
 	open_stream_codec(seg_union->output_ctx ,prog_no);
-	printf("--------------->after transcode init function ..\n");
+	chris_printf("--------------->after transcode init function ..\n");
 
 
 	return 0;
@@ -155,11 +157,11 @@ int seg_write_tailer(Segment_U * seg_union){
 
 	Output_Context *ptr_output_ctx = seg_union->output_ctx;
 
-	printf("before flush ,ptr_output_ctx->ptr_format_ctx->nb_streams = %d \n\n" ,ptr_output_ctx->ptr_format_ctx->nb_streams);
+	chris_printf("before flush ,ptr_output_ctx->ptr_format_ctx->nb_streams = %d \n\n" ,ptr_output_ctx->ptr_format_ctx->nb_streams);
 	encode_flush(ptr_output_ctx ,ptr_output_ctx->ptr_format_ctx->nb_streams);
 
 	write_m3u8_tailer(ptr_output_ctx);
-	printf("before wirite tailer ...\n\n");
+	chris_printf("before wirite tailer ...\n\n");
 	av_write_trailer(ptr_output_ctx->ptr_format_ctx );
 	return 0;
 }
@@ -296,7 +298,7 @@ int seg_transcode_main(Segment_U * seg_union){
 
 
 int free_seg_union(Segment_U * seg_union){
-	printf("start free segment union ...\n");
+	chris_printf("start free segment union ...\n");
 
 	//free output context relevance
 	free_output_memory(seg_union->output_ctx);

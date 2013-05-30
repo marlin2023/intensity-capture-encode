@@ -38,5 +38,14 @@
 #define 		ID_AUDIO_STREAM					1
 
 
+#ifdef CHRIS
+#define  chris_printf(format, ...) { \
+				printf (format, ##__VA_ARGS__); \
+				fflush (stdout); \
+}
+#else
+	#define chris_printf(format ,...)
+
+#endif
 
 #endif /* CHRIS_GLOBAL_H_ */

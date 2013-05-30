@@ -9,6 +9,7 @@
 
 #include "input_handle.h"
 #include "chris_error.h"
+#include "chris_global.h"
 //ffmpeg header
 #include <libavutil/avutil.h>
 
@@ -17,13 +18,13 @@ int init_input(Input_Context *ptr_input_ctx, char* input_file) {
 	//open input file
 	ptr_input_ctx->ptr_format_ctx = NULL;
 	if( avformat_open_input(&ptr_input_ctx->ptr_format_ctx, input_file, NULL, NULL) != 0){
-		printf("inputfile init ,avformat_open_input failed .\n");
+		fprintf(stderr ,"inputfile init ,avformat_open_input failed .\n");
 		exit(AV_OPEN_INPUT_FAIL);
 	}
 
 	//find stream info
 	if ( avformat_find_stream_info(ptr_input_ctx->ptr_format_ctx, NULL) < 0){
-		printf("inputfile init ,avformat_find_stream_info failed .\n");
+		fprintf(stderr ,"inputfile init ,avformat_find_stream_info failed .\n");
 		exit(AV_FIND_STREAM_INFO_FAIL);
 	}
 
@@ -50,34 +51,34 @@ int init_input(Input_Context *ptr_input_ctx, char* input_file) {
 		}
 	}
 
-	printf("audio_index = %d ,video_index = %d \n" ,ptr_input_ctx->audio_index ,
+	chris_printf("audio_index = %d ,video_index = %d \n" ,ptr_input_ctx->audio_index ,
 			ptr_input_ctx->video_index);
 
 	if(ptr_input_ctx->video_index < 0 ){
 
-		printf("do not find video stream ..\n");
+		fprintf(stderr ,"do not find video stream ..\n");
 		exit(NO_VIDEO_STREAM);
 	}
 
 	if(ptr_input_ctx->audio_index < 0 ){
 
-		printf("do not find audio stream ..\n");
+		fprintf(stderr ,"do not find audio stream ..\n");
 		exit(NO_AUDIO_STREAM);
 	}
 
-	av_dump_format(ptr_input_ctx->ptr_format_ctx ,0 ,input_file ,0);
+	//av_dump_format(ptr_input_ctx->ptr_format_ctx ,0 ,input_file ,0);
 	//open video codec
 	ptr_input_ctx->video_codec_ctx = ptr_input_ctx->ptr_format_ctx->streams[ptr_input_ctx->video_index]->codec;
 	ptr_input_ctx->video_codec = avcodec_find_decoder(ptr_input_ctx->video_codec_ctx->codec_id);
 	if(ptr_input_ctx->video_codec == NULL ){
 
-		printf("in inputfile init ,unsupported video codec ..\n");
+		fprintf(stderr ,"in inputfile init ,unsupported video codec ..\n");
 		exit(UNSPPORT_VIDEO_CODEC);
 	}
 
 	if(avcodec_open2(ptr_input_ctx->video_codec_ctx ,ptr_input_ctx->video_codec ,NULL) < 0){
 
-		printf("in inputfile init ,can not open video_codec_ctx ..\n");
+		fprintf(stderr ,"in inputfile init ,can not open video_codec_ctx ..\n");
 		exit(OPEN_VIDEO_CODEC_FAIL);
 	}
 
@@ -86,17 +87,17 @@ int init_input(Input_Context *ptr_input_ctx, char* input_file) {
 	ptr_input_ctx->audio_codec = avcodec_find_decoder(ptr_input_ctx->audio_codec_ctx->codec_id);
 	if(ptr_input_ctx->audio_codec == NULL ){
 
-		printf("in inputfile init ,unsupported audio codec ..\n");
+		fprintf(stderr ,"in inputfile init ,unsupported audio codec ..\n");
 		exit(UNSPPORT_AUDIO_CODEC);
 	}
 
 	if(avcodec_open2(ptr_input_ctx->audio_codec_ctx ,ptr_input_ctx->audio_codec ,NULL) < 0){
 
-		printf("in inputfile init ,can not open audio_codec_ctx ..\n");
+		fprintf(stderr ,"in inputfile init ,can not open audio_codec_ctx ..\n");
 		exit(OPEN_AUDIO_CODEC_FAIL);
 	}
 
-	printf("in here ,have open video codec ,and audio codec .\n");
+	chris_printf("in here ,have open video codec ,and audio codec .\n");
 
 	return 0;
 
@@ -117,14 +118,14 @@ void malloc_input_memory(Input_Context *ptr_input_ctx){
 	/*	malloc memory 	*/
 	ptr_input_ctx->yuv_frame = avcodec_alloc_frame();
 	if(ptr_input_ctx->yuv_frame == NULL){
-		printf("yuv_frame allocate failed %s ,%d line\n" ,__FILE__ ,__LINE__);
+		fprintf(stderr ,"yuv_frame allocate failed %s ,%d line\n" ,__FILE__ ,__LINE__);
 		exit(MEMORY_MALLOC_FAIL);
 	}
 
 	//audio frame
 	ptr_input_ctx->audio_decode_frame = avcodec_alloc_frame();
 	if(ptr_input_ctx->audio_decode_frame == NULL){
-		printf("audio_decode_frame allocate failed %s ,%d line\n" ,__FILE__ ,__LINE__);
+		fprintf(stderr ,"audio_decode_frame allocate failed %s ,%d line\n" ,__FILE__ ,__LINE__);
 		exit(MEMORY_MALLOC_FAIL);
 	}
 }

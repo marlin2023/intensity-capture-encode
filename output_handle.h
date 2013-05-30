@@ -63,6 +63,7 @@ typedef struct {
 	double segment_duration;			//every segment duration
 	//m3u8
 	char *full_m3u8_name;							//m3u8 name
+	char *m3u8;									//add 05242013
 	FILE *fp_m3u8;
 	char *ts_prfix_name;
 	unsigned int segment_no;

@@ -10,6 +10,7 @@
 #include <getopt.h>
 #include <dirent.h>
 #include <sys/types.h>
+#include <sys/file.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <string.h>
@@ -59,8 +60,8 @@ int parse_option_argument(Segment_U ** seg_union_ptr ,int argc, char *argv[]) {
 		switch (next_option) {
 
 		case 'v': 	//version
-			printf("**********************************\n");
-			printf("  segment version:%s \n\n", SEG_VERSION);
+			fprintf(stdout ,"**********************************\n");
+			fprintf(stdout, "  segment version:%s \n\n", SEG_VERSION);
 			exit(0);
 		case 'h': //help
 			fprintf(stderr,
@@ -103,7 +104,7 @@ int parse_option_argument(Segment_U ** seg_union_ptr ,int argc, char *argv[]) {
 						seg_union->num_in_dir == 0 ||
 						seg_union->num_in_m3u8 == 0){
 
-					printf("  Segment Invalid argument   ,please use"
+					fprintf(stdout ,"  Segment Invalid argument   ,please use"
 																" '%s  --help '  to find some information\n", argv[0]);
 					exit(SEG_INVALID_ARGUMENT);
 				}
@@ -111,7 +112,7 @@ int parse_option_argument(Segment_U ** seg_union_ptr ,int argc, char *argv[]) {
 			}
 			seg_union_ptr[i] = (Segment_U *)malloc(sizeof(Segment_U));
 			if(seg_union_ptr[i] == NULL){
-				printf("seg_union malloc failed .\n");
+				fprintf(stderr ,"seg_union malloc failed .\n");
 				exit(1);
 			}
 			seg_union = seg_union_ptr[i++];
@@ -194,7 +195,7 @@ int parse_option_argument(Segment_U ** seg_union_ptr ,int argc, char *argv[]) {
 			seg_union->num_in_dir == 0 ||
 			seg_union->num_in_m3u8 == 0){
 
-		printf("  Segment Invalid argument   ,please use"
+		fprintf(stdout ,"  Segment Invalid argument   ,please use"
 													" '%s  --help '  to find some information\n", argv[0]);
 		exit(SEG_INVALID_ARGUMENT);
 	}
@@ -219,14 +220,14 @@ void create_directory(char *storage_dir) {
 		if (*pos == '/') {
 			*pos = '\0';
 			mkdir(temp, 0777);
-			printf("for %s\n", temp);
+			chris_printf("for %s\n", temp);
 			*pos = '/';
 		}
 	}
 
 	  /* if the last directory not end with '/' ,still create a directory*/
 	if (*(pos - 1) != '/') {
-		printf("if %s\n", temp);
+		chris_printf("if %s\n", temp);
 		mkdir(temp, 0777);
 	}
 	free(temp);
@@ -298,7 +299,7 @@ void recover_from_log(Segment_U * seg_union){
 	FILE *ptr_log = NULL;
 	ptr_log = fopen(seg_union->output_ctx->log_name ,"r");  //open in only read mode
 	if(ptr_log == NULL){
-		printf("open log_file failed ,FILE:%s ,LINE:%d\n" ,__FILE__ ,__LINE__);
+		fprintf(stderr ,"open log_file failed ,FILE:%s ,LINE:%d\n" ,__FILE__ ,__LINE__);
 		exit(OPEN_LOG_FILE_FAIL);
 	}
 
@@ -317,7 +318,7 @@ void recover_from_log(Segment_U * seg_union){
 	 * read log file
 	 * */
 	if (fgets(tmp_buf, 32, ptr_log) == NULL) { //fgets read a whole line data
-		printf("read log_file failed\n");
+		fprintf(stderr, "read log_file failed\n");
 		exit(READ_LOG_FILE_FAIL);
 	}
 
@@ -329,7 +330,7 @@ void recover_from_log(Segment_U * seg_union){
 	if(seg_union->output_ctx->segment_no > seg_union->output_ctx->num_in_m3u8){
 		for(i = 0 ;i <=  seg_union->output_ctx->num_in_m3u8 ;i ++){
 			if(fgets(tmp_buf ,32 ,ptr_log) == NULL){  //fgets read a whole line data
-				printf("read log_file failed\n");
+				fprintf(stderr ,"read log_file failed\n");
 				exit(READ_LOG_FILE_FAIL);
 			}
 
@@ -339,7 +340,7 @@ void recover_from_log(Segment_U * seg_union){
 
 		for(i = 0 ;i <= seg_union->output_ctx->segment_no  ;i ++){
 			if(fgets(tmp_buf ,32 ,ptr_log) == NULL){  //fgets read a whole line data
-				printf("read log_file failed\n");
+				fprintf(stderr ,"read log_file failed\n");
 				exit(READ_LOG_FILE_FAIL);
 			}
 
@@ -358,7 +359,7 @@ void update_log_file(Output_Context *ptr_output_ctx){
 
 	ptr_log = fopen(ptr_output_ctx->log_name ,"w");
 	if(ptr_log == NULL){
-		printf("open log_file failed ,FILE:%s ,LINE:%d\n" ,__FILE__ ,__LINE__);
+		fprintf(stderr ,"open log_file failed ,FILE:%s ,LINE:%d\n" ,__FILE__ ,__LINE__);
 		exit(OPEN_LOG_FILE_FAIL);
 	}
 
@@ -431,7 +432,7 @@ static void draw_jpeg(AVPicture *pic, int width, int height, char * jpeg_name) {
 	jpeg_finish_compress(&cinfo);
 	fclose(fp);
 	jpeg_destroy_compress(&cinfo);
-	printf("compress frame finished!==========================================>>>>>>>>>>>>>>>>>>>>>>>>>./n");
+	chris_printf("compress frame finished!==========================================>>>>>>>>>>>>>>>>>>>>>>>>>./n");
 	return;
 }
 
@@ -439,12 +440,11 @@ void record_segment_time(Output_Context *ptr_output_ctx){
 
 	if(ptr_output_ctx->start_time_mark == 0){
 		ptr_output_ctx->start_time_mark = 1;
-//		printf("混蛋。。。、\n");
 		ptr_output_ctx->prev_segment_time = av_q2d(ptr_output_ctx->video_stream->time_base) *
 													(ptr_output_ctx->pkt.pts )
 													- (double)ptr_output_ctx->ptr_format_ctx->start_time / AV_TIME_BASE;
 
-		printf("ptr_output_ctx->prev_segment_time = %f \n" ,ptr_output_ctx->prev_segment_time);
+		chris_printf("ptr_output_ctx->prev_segment_time = %f \n" ,ptr_output_ctx->prev_segment_time);
 
 	}
 
@@ -455,14 +455,22 @@ void record_segment_time(Output_Context *ptr_output_ctx){
 
 //	//time meet
 	if(ptr_output_ctx->curr_segment_time - ptr_output_ctx->prev_segment_time >= ptr_output_ctx->segment_duration){
-		printf("...meet time .. ,duration = %f ,start_time = %f .\n" ,ptr_output_ctx->curr_segment_time - ptr_output_ctx->prev_segment_time ,
+		chris_printf("...meet time .. ,duration = %f ,start_time = %f .\n" ,ptr_output_ctx->curr_segment_time - ptr_output_ctx->prev_segment_time ,
 				(double)ptr_output_ctx->ptr_format_ctx->start_time / AV_TIME_BASE);
 //		//get lock
 //		pthread_mutex_lock(&ptr_output_ctx->output_mutex);
 		avio_flush(ptr_output_ctx->ptr_format_ctx->pb);
 		avio_close(ptr_output_ctx->ptr_format_ctx->pb);
 
-		printf("complete the %d.ts ,and write the m3u8 file..\n" ,ptr_output_ctx->segment_no);
+		chris_printf("complete the %d.ts ,and write the m3u8 file..\n" ,ptr_output_ctx->segment_no);
+
+//zhangyanlong
+#if 1
+		flock(STDOUT_FILENO ,LOCK_EX);
+		fprintf(stdout ,"{\"ret\":%s ,\"seg\":%u,\"duration\":%.02f}\n" ,ptr_output_ctx->m3u8 ,ptr_output_ctx->segment_no ,
+				ptr_output_ctx->curr_segment_time - ptr_output_ctx->prev_segment_time);
+		flock(STDOUT_FILENO ,LOCK_UN);
+#endif
 		write_m3u8_body( ptr_output_ctx ,ptr_output_ctx->curr_segment_time - ptr_output_ctx->prev_segment_time);
 		//create next ts file name
 		sprintf(&(ptr_output_ctx->ts_name[ptr_output_ctx->dir_name_len]) ,"%s-%d.ts" ,ptr_output_ctx->ts_prfix_name ,++ptr_output_ctx->segment_no);
@@ -513,7 +521,7 @@ static int segmenter_duration_round(double src_num){
 
 void write_m3u8_body(Output_Context *ptr_output_ctx ,double segment_duration){
 
-	printf("=====segment_duration = %f \n" ,segment_duration);
+	chris_printf("=====segment_duration = %f \n" ,segment_duration);
 //	while(1);
 
 	if (ptr_output_ctx->mode_type == YY_LIVE) { //live
@@ -578,7 +586,7 @@ void write_m3u8_body(Output_Context *ptr_output_ctx ,double segment_duration){
 				fclose(ptr_output_ctx->fp_m3u8);
 				exit(WRITE_M3U8_FAIL);
 			}
-			printf("#chirs :success write the m3u8 file\n");
+			chris_printf("#chirs :success write the m3u8 file\n");
 		} else { ////situation second
 			/*先对数组中保存的ts的时间长度进行更新*/
 
@@ -621,7 +629,7 @@ void write_m3u8_body(Output_Context *ptr_output_ctx ,double segment_duration){
 				fclose(ptr_output_ctx->fp_m3u8);
 				exit(WRITE_M3U8_FAIL);
 			}
-			printf("#chirs :success write the m3u8 file\n");
+			chris_printf("#chirs :success write the m3u8 file\n");
 		}
 
 		fclose(ptr_output_ctx->fp_m3u8);
@@ -632,17 +640,17 @@ void write_m3u8_body(Output_Context *ptr_output_ctx ,double segment_duration){
 				> ptr_output_ctx->num_in_dir) {
 
 			char remove_ts_filename[1024] = {0};
-			printf("ptr_output_ctx->ts_name = %s \n" ,ptr_output_ctx->ts_name);
+			chris_printf("ptr_output_ctx->ts_name = %s \n" ,ptr_output_ctx->ts_name);
 			snprintf(remove_ts_filename ,ptr_output_ctx->dir_name_len + 1 ,"%s" ,ptr_output_ctx->ts_name );
-			printf("ptr_output_ctx->dir_name_len = %d ,no = %d \n" ,ptr_output_ctx->dir_name_len ,ptr_output_ctx->segment_no);
-			printf("-------------remove_ts_filename = %s\n" ,remove_ts_filename);
+			chris_printf("ptr_output_ctx->dir_name_len = %d ,no = %d \n" ,ptr_output_ctx->dir_name_len ,ptr_output_ctx->segment_no);
+			chris_printf("-------------remove_ts_filename = %s\n" ,remove_ts_filename);
 			snprintf(
 					&(remove_ts_filename[ptr_output_ctx->dir_name_len]),
 					1024,
 					"%s-%u.ts",
 					ptr_output_ctx->ts_prfix_name,
 					ptr_output_ctx->segment_no - ptr_output_ctx->num_in_dir);
-			printf("-------------remove_ts_filename = %s\n" ,remove_ts_filename);
+			chris_printf("-------------remove_ts_filename = %s\n" ,remove_ts_filename);
 			//remove this file
 			unlink(remove_ts_filename);
 		}

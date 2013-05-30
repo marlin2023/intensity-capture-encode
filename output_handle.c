@@ -30,7 +30,7 @@ AVStream * add_video_stream(AVFormatContext *fmt_ctx, enum CodecID codec_id,
 	//add video stream
 	st = avformat_new_stream(fmt_ctx, NULL);
 	if (st == NULL) {
-		printf("in out file ,new video stream fimplicit dailed ..\n");
+		fprintf(stderr ,"in out file ,new video stream fimplicit dailed ..\n");
 		exit(NEW_VIDEO_STREAM_FAIL);
 	}
 
@@ -134,7 +134,7 @@ AVStream * add_audio_stream(AVFormatContext *fmt_ctx, enum CodecID codec_id,
 	//add video stream
 	st = avformat_new_stream(fmt_ctx, NULL);
 	if (st == NULL) {
-		printf("in out file ,new video stream failed ..\n");
+		fprintf(stderr ,"in out file ,new video stream failed ..\n");
 		exit(NEW_VIDEO_STREAM_FAIL);
 	}
 
@@ -163,16 +163,16 @@ int init_output(Output_Context *ptr_output_ctx, char* output_file, int prog_no) 
 
 	//set AVOutputFormat
 	/* allocate the output media context */
-	printf("output_file = %s \n", output_file);
+	chris_printf("output_file = %s \n", output_file);
 	avformat_alloc_output_context2(&ptr_output_ctx->ptr_format_ctx, NULL, NULL,
 			output_file);
 	if (ptr_output_ctx->ptr_format_ctx == NULL) {
-		printf(
+		fprintf(stdout ,
 				"Could not deduce[推断] output format from file extension: using MPEG.\n");
 		avformat_alloc_output_context2(&ptr_output_ctx->ptr_format_ctx, NULL,
 				"mpeg", output_file);
 		if (ptr_output_ctx->ptr_format_ctx == NULL) {
-			printf("Could not find suitable output format\n");
+			fprintf(stderr ,"Could not find suitable output format\n");
 			exit(NOT_GUESS_OUT_FORMAT);
 		}
 	}
@@ -192,7 +192,7 @@ int init_output(Output_Context *ptr_output_ctx, char* output_file, int prog_no) 
 				ptr_output_ctx->ptr_format_ctx, ptr_output_ctx->video_codec_id,
 				ptr_output_ctx, prog_no);
 		if (ptr_output_ctx->video_stream == NULL) {
-			printf("in output ,add video stream failed \n");
+			fprintf(stderr ,"in output ,add video stream failed \n");
 			exit(ADD_VIDEO_STREAM_FAIL);
 		}
 	}
@@ -203,7 +203,7 @@ int init_output(Output_Context *ptr_output_ctx, char* output_file, int prog_no) 
 				ptr_output_ctx->ptr_format_ctx, ptr_output_ctx->audio_codec_id,
 				ptr_output_ctx);
 		if (ptr_output_ctx->audio_stream == NULL) {
-			printf(".in output ,add audio stream failed \n");
+			fprintf(stderr ,".in output ,add audio stream failed \n");
 			exit(ADD_AUDIO_STREAM_FAIL);
 		}
 	}
@@ -211,18 +211,18 @@ int init_output(Output_Context *ptr_output_ctx, char* output_file, int prog_no) 
 	/*	malloc buffer	*/
 	ptr_output_ctx->encoded_yuv_pict = avcodec_alloc_frame();
 	if (ptr_output_ctx->encoded_yuv_pict == NULL) {
-		printf("yuv_frame allocate failed %s ,%d line\n", __FILE__, __LINE__);
+		fprintf(stderr ,"yuv_frame allocate failed %s ,%d line\n", __FILE__, __LINE__);
 		exit(MEMORY_MALLOC_FAIL);
 	}
 	int size = avpicture_get_size(ptr_output_ctx->video_stream->codec->pix_fmt,
 			ptr_output_ctx->video_stream->codec->width,
 			ptr_output_ctx->video_stream->codec->height);
 
-	printf("size = %d ,width = %d \n", size,
+	chris_printf("size = %d ,width = %d \n", size,
 			ptr_output_ctx->video_stream->codec->width);
 	ptr_output_ctx->pict_buf = av_malloc(size);
 	if (ptr_output_ctx->pict_buf == NULL) {
-		printf("pict allocate failed ...\n");
+		fprintf(stderr ,"pict allocate failed ...\n");
 		exit(MEMORY_MALLOC_FAIL);
 	}
 	//bind
@@ -242,15 +242,15 @@ int init_output(Output_Context *ptr_output_ctx, char* output_file, int prog_no) 
 	ptr_output_ctx->start_time_mark = 0;
 
 	/*output the file information */
-	av_dump_format(ptr_output_ctx->ptr_format_ctx, 0, output_file, 1);
+	//av_dump_format(ptr_output_ctx->ptr_format_ctx, 0, output_file, 1);
 
 	//fifo
 	ptr_output_ctx->fifo = av_fifo_alloc(1024);
 	if (!ptr_output_ctx->fifo) {
 		exit(1);
 	}
-	av_log(NULL, AV_LOG_WARNING, "--av_fifo_size(ost->fifo) = %d \n",
-			av_fifo_size(ptr_output_ctx->fifo)); //输出是0？！
+	//av_log(NULL, AV_LOG_WARNING, "--av_fifo_size(ost->fifo) = %d \n",
+	//		av_fifo_size(ptr_output_ctx->fifo)); //输出是0？！
 
 	//add
 	pthread_mutex_init(&ptr_output_ctx->output_mutex, NULL);
@@ -270,7 +270,7 @@ static void open_video(Output_Context *ptr_output_ctx, AVStream * st,
 	//find video encode
 	video_encode = avcodec_find_encoder(video_codec_ctx->codec_id);
 	if (video_encode == NULL) {
-		printf("in output ,open_video ,can not find video encode.\n");
+		fprintf(stderr ,"in output ,open_video ,can not find video encode.\n");
 		exit(NO_FIND_VIDEO_ENCODE);
 	}
 
@@ -356,7 +356,7 @@ static void open_video(Output_Context *ptr_output_ctx, AVStream * st,
 	//open video encode
 	if (avcodec_open2(video_codec_ctx, video_encode, &opts/*NULL*/) < 0) {
 
-		printf("in open_video function ,can not open video encode.\n");
+		fprintf(stderr ,"in open_video function ,can not open video encode.\n");
 		exit(OPEN_VIDEO_ENCODE_FAIL);
 	}
 
@@ -364,12 +364,12 @@ static void open_video(Output_Context *ptr_output_ctx, AVStream * st,
 	ptr_output_ctx->video_outbuf = NULL;
 	if (!(ptr_output_ctx->ptr_format_ctx->oformat->flags & AVFMT_RAWPICTURE)) { //in ffmpeg,only nullenc and yuv4mpeg have this flags
 		//so ,mp4 and mpegts both go in here
-		printf(".....malloc video buffer ...\n");
+		chris_printf(".....malloc video buffer ...\n");
 		ptr_output_ctx->video_outbuf_size = VIDEO_OUT_BUF_SIZE;
 		ptr_output_ctx->video_outbuf = av_malloc(
 				ptr_output_ctx->video_outbuf_size);
 		if (ptr_output_ctx->video_outbuf == NULL) {
-			printf("video_outbuf malloc failed ...\n");
+			fprintf(stderr ,"video_outbuf malloc failed ...\n");
 			exit(MEMORY_MALLOC_FAIL);
 		}
 	}
@@ -386,7 +386,7 @@ static void open_audio(Output_Context *ptr_output_ctx, AVStream * st) {
 	//find audio encode
 	audio_encode = avcodec_find_encoder(audio_codec_ctx->codec_id);
 	if (audio_encode == NULL) {
-		printf("in output ,open_audio ,can not find audio encode.\n");
+		fprintf(stderr ,"in output ,open_audio ,can not find audio encode.\n");
 		exit(NO_FIND_AUDIO_ENCODE);
 	}
 
@@ -396,14 +396,14 @@ static void open_audio(Output_Context *ptr_output_ctx, AVStream * st) {
 	//open audio encode
 	if (avcodec_open2(audio_codec_ctx, audio_encode, NULL) < 0) {
 
-		printf("in open_audio function ,can not open audio encode.\n");
+		fprintf(stderr ,"in open_audio function ,can not open audio encode.\n");
 		exit(OPEN_AUDIO_ENCODE_FAIL);
 	}
 
 	ptr_output_ctx->audio_outbuf_size = AUDIO_OUT_BUF_SIZE;
 	ptr_output_ctx->audio_outbuf = av_malloc(ptr_output_ctx->audio_outbuf_size);
 	if (ptr_output_ctx->audio_outbuf == NULL) {
-		printf("audio_outbuf malloc failed ...\n");
+		fprintf(stderr ,"audio_outbuf malloc failed ...\n");
 		exit(MEMORY_MALLOC_FAIL);
 	}
 
@@ -413,7 +413,7 @@ static void open_audio(Output_Context *ptr_output_ctx, AVStream * st) {
 	if (audio_codec_ctx->frame_size <= 1) {
 		audio_input_frame_size = ptr_output_ctx->audio_outbuf_size
 				/ audio_codec_ctx->channels;
-		printf("&&$$&&#&#&#&&#&#&#&&#\n\n");
+		fprintf(stderr ,"&&$$&&#&#&#&&#&#&#&&#\n\n");
 		sleep(10);
 		switch (st->codec->codec_id) {
 		case CODEC_ID_PCM_S16LE:
@@ -552,7 +552,7 @@ void encode_audio_frame(Output_Context *ptr_output_ctx1[], uint8_t *buf,
 	//frame for input
 	AVFrame *frame = avcodec_alloc_frame();
 	if (frame == NULL) {
-		printf("frame malloc failed ...\n");
+		fprintf(stderr ,"frame malloc failed ...\n");
 		exit(1);
 	}
 
@@ -639,8 +639,7 @@ void encode_flush(Output_Context *ptr_output_ctx, int nb_ostreams) {
 					generate_silence(ptr_output_ctx->audio_buf + fifo_bytes,
 							enc->sample_fmt, frame_bytes - fifo_bytes);
 
-					printf("audio ...........\n");
-//					encode_audio_frame(ptr_output_ctx, ptr_output_ctx->audio_buf, frame_bytes);  //???????
+					chris_printf("audio ...........\n");
 
 				} else {
 					/* flush encoder with NULL frames until it is done
@@ -653,7 +652,7 @@ void encode_flush(Output_Context *ptr_output_ctx, int nb_ostreams) {
 						exit(AUDIO_ENCODE_ERROR);
 					}
 
-					printf("audio ...........\n");
+					chris_printf("audio ...........\n");
 					if (ret1 == 0) {
 						stop_encoding = 1;
 						break;
@@ -681,7 +680,7 @@ void encode_flush(Output_Context *ptr_output_ctx, int nb_ostreams) {
 					exit(VIDEO_FLUSH_ERROR);
 				}
 
-				printf("video ...........\n");
+				chris_printf("video ...........\n");
 				if (nEncodedBytes > 0) {
 					pkt.stream_index = ptr_output_ctx->video_stream->index;
 					pkt.data = ptr_output_ctx->video_outbuf; // packet data will be allocated by the encoder
@@ -743,10 +742,6 @@ void do_audio_out(Output_Context *ptr_output_ctx1[], void * src_audio_buf,
 	int osize = av_get_bytes_per_sample(enc->sample_fmt);
 
 	int isize = av_get_bytes_per_sample(dec_sample_fmt);
-//	printf("osize = %d  ,isize = %d \n" ,osize ,isize);
-//
-//	printf("enc->channel_layout  = %lu \n" ,enc->channel_layout );
-//	while(1);
 	/*	in buf ,is the decoded audio data	*/
 	uint8_t *buf = (uint8_t *) src_audio_buf;
 	int size = src_audio_buf_size;
@@ -784,7 +779,7 @@ void do_audio_out(Output_Context *ptr_output_ctx1[], void * src_audio_buf,
 	/*	init SwrContext	,perform only one time	*/
 	if (ptr_output_ctx->audio_resample && !ptr_output_ctx->swr) {
 
-		printf("ptr_output_ctx->audio_resample = %d ,and we need resample \n",
+		chris_printf("ptr_output_ctx->audio_resample = %d ,and we need resample \n",
 				ptr_output_ctx->audio_resample);
 		ptr_output_ctx->swr = swr_alloc_set_opts(NULL, enc->channel_layout,
 				enc->sample_fmt, enc->sample_rate, /*dec->channel_layout*/
@@ -833,7 +828,6 @@ void do_audio_out(Output_Context *ptr_output_ctx1[], void * src_audio_buf,
 
 	//write data
 
-//		printf("av_fifo_size(ptr_output_ctx->fifo) = %d \n" ,av_fifo_size(ptr_output_ctx->fifo));
 	if (av_fifo_realloc2(ptr_output_ctx->fifo,
 			av_fifo_size(ptr_output_ctx->fifo) + size_out) < 0) {
 		av_log(NULL, AV_LOG_FATAL, "av_fifo_realloc2() failed\n");
@@ -844,13 +838,11 @@ void do_audio_out(Output_Context *ptr_output_ctx1[], void * src_audio_buf,
 	frame_bytes = enc->frame_size * osize * enc->channels;
 
 	while (av_fifo_size(ptr_output_ctx->fifo) >= frame_bytes) {
-//			printf("av_fifo_size(ost->fifo) = %d ,frame_bytes = %d\n" ,av_fifo_size(ptr_output_ctx->fifo) ,frame_bytes);
 		av_fifo_generic_read(ptr_output_ctx->fifo, ptr_output_ctx->audio_buf,
 				frame_bytes, NULL);
 
 		encode_audio_frame(ptr_output_ctx1, ptr_output_ctx->audio_buf,
 				frame_bytes, prog_num);
-		//printf("encode audio ....\n");
 	}
 
 }

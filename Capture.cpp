@@ -22,6 +22,7 @@ extern "C"{
 #include "segment_utils.h"
 #include "libswscale/swscale.h"
 #include "libavformat/avformat.h"
+#include "chris_global.h"
 }
 
 //may be ,all the following variable can be remove
@@ -69,12 +70,11 @@ HRESULT DeckLinkCaptureDelegate::VideoInputFrameArrived(IDeckLinkVideoInputFrame
 	if(videoFrame)
 	{	
 
-		if (videoFrame->GetFlags() & bmdFrameHasNoInputSource)
-		{
-//			fprintf(stderr, "Frame received (#%u) - No input signal detected\n", this->seg_union->picture_capture_no);
-		}
-		else
-		{
+//		if (videoFrame->GetFlags() & bmdFrameHasNoInputSource)
+//		{
+//		}
+//		else
+		if(!(videoFrame->GetFlags() & bmdFrameHasNoInputSource)){
 			videoFrame->GetBytes(&frameBytes);
 
 			int i ;
@@ -102,8 +102,6 @@ HRESULT DeckLinkCaptureDelegate::VideoInputFrameArrived(IDeckLinkVideoInputFrame
 	/* Handle Audio Frame */
 	if (audioFrame)
 	{
-		//printf("audio .... ,frame count = %ld\n" ,audioFrame->GetSampleFrameCount());
-		//int haha = audioFrame->GetSampleFrameCount() * CAPTURE_AUDIO_CHANNEL_NUM * (CAPTURE_AUDIO_SAMPLE_DEPTH / 8);
 		audioFrame->GetBytes(&audioFrameBytes);
 		int i;
 
@@ -144,7 +142,6 @@ void * encode_yuv_data( void *void_del){
 		if(delegate->yuv_video_buf[0]->have_data_mark == 0){
 			pthread_cond_wait(&delegate->yuv_video_buf[0]->yuv_buf_cond ,&delegate->yuv_video_buf[0]->yuv_buf_mutex);
 		}
-		//printf("after wait 1.. ,have_data_mark = %d.\n" ,delegate->yuv_video_buf[0]->have_data_mark);
 		//encode
 		seg_write_frame(delegate->seg_union[0] ,
 						delegate->width_capture ,delegate->height_caputre ,
@@ -180,7 +177,6 @@ void * encode_yuv_data1( void *void_del){
 		if(delegate->yuv_video_buf[1]->have_data_mark == 0){
 			pthread_cond_wait(&delegate->yuv_video_buf[1]->yuv_buf_cond ,&delegate->yuv_video_buf[1]->yuv_buf_mutex);
 		}
-		//printf("after wait 1.. ,have_data_mark = %d.\n" ,delegate->yuv_video_buf[1]->have_data_mark);
 //		//encode
 
 		seg_write_frame(delegate->seg_union[1] ,
@@ -216,7 +212,6 @@ void * encode_yuv_data2( void *void_del){
 		if(delegate->yuv_video_buf[2]->have_data_mark == 0){
 			pthread_cond_wait(&delegate->yuv_video_buf[2]->yuv_buf_cond ,&delegate->yuv_video_buf[2]->yuv_buf_mutex);
 		}
-		//printf("after wait 1.. ,have_data_mark = %d.\n" ,delegate->yuv_video_buf[2]->have_data_mark);
 //		//encode
 		seg_write_frame(delegate->seg_union[2] ,
 						delegate->width_capture ,delegate->height_caputre ,
@@ -245,7 +240,7 @@ void * encode_yuv_data2( void *void_del){
  * */
 void * key_listen(void *handle) {
 
-	printf("#chris:in monitor pthread\n");
+	chris_printf("#chris:in monitor pthread\n");
 
 	DeckLinkCaptureDelegate 	*delegate  = (DeckLinkCaptureDelegate 	*)handle;
 	fd_set rdfds;
@@ -259,13 +254,13 @@ void * key_listen(void *handle) {
 
 	char str_consle_input1[12] = {0};
 
-	printf("Press [q] to stop\n");
+	chris_printf("Press [q] to stop\n");
 
 	while (1) {
 
 		int ret = select(1, &rdfds, NULL, NULL, /*&tv*/&tv); /* 注意是最大值还要加1 */
 		if (ret < 0) {
-			printf(" error\n");/* 出错 */
+			fprintf(stderr ,"select error\n");/* 出错 */
 		} else if (ret == 0) {
 			//over time
 		} else { //receive key value from keyboard
@@ -273,11 +268,9 @@ void * key_listen(void *handle) {
 			fgets(str_consle_input1, 12, stdin); //stdin
 
 			if (strcmp(str_consle_input1, "q\n") == 0) { //notice ,must end with the '\n'
-				printf("hahah -->q \n");
+				chris_printf("hahah -->q \n");
 				delegate->quit_mark = 1;
 				exit(0); //here ,use exit ,and force kill current thread...
-//				pthread_exit(0);
-				printf("after pthread_exit() in the listen key board thread \n");
 			}
 
 
@@ -290,7 +283,7 @@ void * key_listen(void *handle) {
 		tv.tv_sec = 1;
 		tv.tv_usec = 0;
 	}
-	printf("exit while loop\n");
+	chris_printf("exit while loop\n");
 
 	return NULL;
 }
@@ -364,18 +357,18 @@ int main(int argc, char *argv[])
 			
 			foundDisplayMode = true;
 			displayMode->GetName(&displayModeName);
-			printf(" displayModeName = %s \n" ,displayModeName);
+			chris_printf(" displayModeName = %s \n" ,displayModeName);
 
 			selectedDisplayMode = displayMode->GetDisplayMode();
 			
-			printf("selectedDisplayMode = %x \n\n" , selectedDisplayMode);
+			chris_printf("selectedDisplayMode = %x \n\n" , selectedDisplayMode);
 			deckLinkInput->DoesSupportVideoMode(selectedDisplayMode, pixelFormat, bmdVideoInputFlagDefault, &result, NULL);
 
 
 			delegate->width_capture = (int)displayMode->GetWidth();
 			delegate->height_caputre = (int)displayMode->GetHeight();
 
-			printf("result = %u \n\n" ,result);
+			chris_printf("result = %u \n\n" ,result);
 			if (result == bmdDisplayModeNotSupported)
 			{
 				fprintf(stderr, "The display mode %s is not supported with the selected pixel format\n", displayModeName);
@@ -400,7 +393,7 @@ int main(int argc, char *argv[])
 	/*	parse the option */
 	delegate->prog_num = parse_option_argument(delegate->seg_union ,argc ,argv);
 	//after parse_option_argument function ,input argument have been assignment
-	printf("prog_num = %d ,width = %d ,height = %d  \n" ,delegate->prog_num ,delegate->width_capture  ,delegate->height_caputre);
+	chris_printf("prog_num = %d ,width = %d ,height = %d  \n" ,delegate->prog_num ,delegate->width_capture  ,delegate->height_caputre);
 
 	av_register_all();
 	avformat_network_init();
@@ -415,13 +408,13 @@ int main(int argc, char *argv[])
 		/*	init yuv_video_buffer*/
 		delegate->yuv_video_buf[i] = (yuv_video_buf_union * )malloc(sizeof(yuv_video_buf_union));
 		if(delegate->yuv_video_buf[i] == NULL){
-			printf("yuv video buf malloc failed .\n");
+			fprintf(stderr ,"yuv video buf malloc failed .\n");
 			exit(1);
 		}
 
 		delegate->yuv_video_buf[i]->yuv_data = (unsigned char *)malloc(delegate->width_capture * delegate->height_caputre * 2);
 		if(delegate->yuv_video_buf[i]->yuv_data == NULL){
-			printf("yuv_data buffer malloc failed .\n");
+			fprintf(stderr ,"yuv_data buffer malloc failed .\n");
 			exit(1);
 		}
 
@@ -473,7 +466,7 @@ int main(int argc, char *argv[])
 	 *Video input (and optionally audio input) is started by calling  StartStreams .
 	 * */
 
-	printf("inputFlags = %u \n" ,inputFlags);
+	chris_printf("inputFlags = %u \n" ,inputFlags);
     result = deckLinkInput->EnableVideoInput(selectedDisplayMode, pixelFormat, inputFlags);
     if(result != S_OK)
     {
@@ -489,7 +482,7 @@ int main(int argc, char *argv[])
     result = deckLinkInput->EnableAudioInput(bmdAudioSampleRate48kHz, CAPTURE_AUDIO_SAMPLE_DEPTH, CAPTURE_AUDIO_CHANNEL_NUM);
     if(result != S_OK)
     {
-    	printf("audion enable failed ...\n");
+    	fprintf(stderr ,"audion enable failed ...\n");
         goto bail;
     }
 
@@ -513,7 +506,7 @@ int main(int argc, char *argv[])
 	}
 
 
-    printf("program over......\n");
+	chris_printf("program over......\n");
 	// Block main thread until signal occurs
 
 bail:
