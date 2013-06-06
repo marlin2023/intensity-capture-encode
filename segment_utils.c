@@ -467,8 +467,9 @@ void record_segment_time(Output_Context *ptr_output_ctx){
 //zhangyanlong
 #if 1
 		flock(STDOUT_FILENO ,LOCK_EX);
-		fprintf(stdout ,"{\"ret\":%s ,\"seg\":%u,\"duration\":%.02f}\n" ,ptr_output_ctx->m3u8 ,ptr_output_ctx->segment_no ,
+		fprintf(stdout ,"{\"ret\":\"%s\", \"seg\":%u, \"duration\":%.02f}\n" ,ptr_output_ctx->m3u8 ,ptr_output_ctx->segment_no ,
 				ptr_output_ctx->curr_segment_time - ptr_output_ctx->prev_segment_time);
+		fflush(stdout);
 		flock(STDOUT_FILENO ,LOCK_UN);
 #endif
 		write_m3u8_body( ptr_output_ctx ,ptr_output_ctx->curr_segment_time - ptr_output_ctx->prev_segment_time);
